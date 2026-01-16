@@ -78,14 +78,19 @@
 
     <script src="firebase-init.js"></script>
     <script>
-        let db, auth, driverUser;
+        // FIXED: Removed 'db' and 'auth' from declaration since they exist in firebase-init.js
+        let driverUser;
         let myLat = 0, myLng = 0;
         let gpsInterval = null;
 
         window.onload = function() {
-            if (typeof firebase === 'undefined') return alert("Firebase Error");
-            db = firebase.database();
-            auth = firebase.auth();
+            // Safety Check: If firebase-init.js failed to load variables
+            if (typeof db === 'undefined' || typeof auth === 'undefined') {
+                console.error("Firebase Init Failed. Creating fallback connection...");
+                // Fallback (just in case)
+                db = firebase.database();
+                auth = firebase.auth();
+            }
 
             auth.onAuthStateChanged(user => {
                 if(user) {
@@ -199,7 +204,7 @@
                         div.style.borderLeft = "5px solid #28a745";
                         
                         // MAP LINK FOR CONFIRMED RIDE
-                        const mapLink = `https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`;
+                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
 
                         div.innerHTML = `
                             <div class="alert alert-success p-2"><strong>✅ RIDE CONFIRMED!</strong></div>
@@ -237,7 +242,6 @@
                         div.className = 'req-card';
                         
                         // MAP LINK FOR NEW JOB
-                        // Allows driver to see location before accepting
                         const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
 
                         const myBid = (r.bids && r.bids[driverUser.id]);
