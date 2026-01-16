@@ -4,14 +4,13 @@
     <title>Driver App - RideLink</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#28a745">
-    <link rel="stylesheet" href="style.css">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background: #f4f6f9; padding-bottom: 80px; }
+        body { background: #f4f6f9; padding-bottom: 80px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; }
 
         /* HEADER */
         .page-header {
@@ -69,6 +68,9 @@
             background: #d4edda; border: 1px solid #c3e6cb; margin: 15px; padding: 15px;
             border-radius: 10px;
         }
+        
+        /* INPUT STYLES */
+        input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -123,7 +125,7 @@
                 📍 View on Google Maps
             </button>
 
-            <button onclick="ignoreRequest()" style="width:100%; padding:15px; border:none; background:#fff; color:#dc3545; border:1px solid #dc3545; border-radius:8px; margin-bottom:100px;">
+            <button onclick="ignoreRequest()" style="width:100%; padding:15px; background:#fff; color:#dc3545; border:1px solid #dc3545; border-radius:8px; margin-bottom:100px;">
                 🗑 Ignore / Delete Request
             </button>
         </div>
@@ -132,11 +134,11 @@
             <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <div style="flex:1;">
                     <label style="font-size:12px; font-weight:bold;">Fare (Rs)</label>
-                    <input type="number" id="inp-fare" class="form-control" placeholder="300" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                    <input type="number" id="inp-fare" placeholder="300">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px; font-weight:bold;">ETA (Mins)</label>
-                    <input type="number" id="inp-eta" class="form-control" placeholder="5" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                    <input type="number" id="inp-eta" placeholder="5">
                 </div>
             </div>
             <button class="btn-primary" onclick="submitBid()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; border-radius:8px; font-weight:bold;">
@@ -154,8 +156,8 @@
 
         // 1. INIT
         window.onload = function() {
-            const saved = localStorage.getItem("taxiUser");
-            if (!saved) return window.location.href = "driver_login.html";
+            const saved = localStorage.getItem("driverUser");
+            if (!saved) return window.location.href = "driver.html"; // Redirect if no session
             driverUser = JSON.parse(saved);
             
             // Initial UI Setup
@@ -208,7 +210,7 @@
                         div.innerHTML = `
                             <span class="req-time">Just Now</span>
                             <div class="req-route">${req.pickup} <br>⬇<br> ${req.drop}</div>
-                            <span class="req-type">${req.vehicleType.toUpperCase()}</span>
+                            <span class="req-type">${req.vehicleType ? req.vehicleType.toUpperCase() : 'ANY'}</span>
                         `;
                         list.prepend(div);
                     });
@@ -246,10 +248,10 @@
                         div.className = 'confirmed-card';
                         div.innerHTML = `
                             <h4 style="color:#155724; margin:0 0 10px 0;">✅ Ride Confirmed!</h4>
-                            <p><strong>Passenger:</strong> ${req.riderName}</p>
+                            <p><strong>Passenger:</strong> ${req.riderName || 'Client'}</p>
                             <p><strong>Pickup:</strong> ${req.pickup}</p>
                             <p><strong>Fare:</strong> Rs. ${req.agreedPrice}</p>
-                            <div style="margin-top:10px;">
+                            <div style="margin-top:10px; display:flex; justify-content:space-between;">
                                 <button onclick="notifyRider('${key}')" style="background:#ffc107; border:none; padding:8px; border-radius:5px; width:48%;">🔔 Notify</button>
                                 <button onclick="completeRide('${key}')" style="background:#28a745; color:white; border:none; padding:8px; border-radius:5px; width:48%;">🏁 Complete</button>
                             </div>
@@ -360,7 +362,6 @@
         function notifyRider(reqId) {
             const time = prompt("Enter minutes until arrival:", "5");
             if(time) {
-                // We can't push notification, but we can update a status field the rider app watches
                 db.ref('requests/' + reqId).update({
                     driverStatus: `Arriving in ${time} mins`
                 });
