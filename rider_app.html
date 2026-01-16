@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
         
         /* HEADER */
         .page-header { background: #1e293b; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
@@ -25,15 +25,22 @@
         /* INPUTS */
         .input-group { margin-bottom: 15px; width: 100%; }
         .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; text-align: left; width: 100%; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; background: #f8fafc; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; background: #fff; }
         .input-group input:focus { border-color: #10b981; outline: none; background: #fff; }
 
-        /* VEHICLE GRID */
+        /* VEHICLE GRID (FIXED) */
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
-        .vehicle-item { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
-        .vehicle-item.selected { border-color: #10b981; background-color: #ecfdf5; transform: scale(1.02); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
-        .v-icon { font-size: 28px; display: block; margin-bottom: 5px; }
-        .v-name { font-size: 11px; font-weight: 600; color: #334155; }
+        .vehicle-item { 
+            background: white; border: 2px solid #e2e8f0; border-radius: 12px; 
+            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; 
+        }
+        /* Active State */
+        .vehicle-item.selected { 
+            border-color: #10b981; background-color: #ecfdf5; 
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); transform: scale(1.02);
+        }
+        .v-icon { font-size: 32px; display: block; margin-bottom: 5px; }
+        .v-name { font-size: 12px; font-weight: 700; color: #334155; }
 
         /* LIST ITEMS */
         .req-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); position: relative; cursor: pointer; }
@@ -64,24 +71,24 @@
 
         <div class="card">
             <div class="input-group">
-                <label>Pickup <span style="color:red">*</span></label>
+                <label>Pickup Location <span style="color:red">*</span></label>
                 <input type="text" id="inp-pickup" placeholder="E.g. Main Market">
             </div>
             <div class="input-group">
-                <label>Dropoff <span style="color:red">*</span></label>
+                <label>Dropoff Location <span style="color:red">*</span></label>
                 <input type="text" id="inp-drop" placeholder="E.g. City Hospital">
             </div>
             <div class="input-group">
-                <label>Landmark</label>
+                <label>Landmark (Optional)</label>
                 <input type="text" id="inp-landmark" placeholder="Near Park...">
             </div>
             <div class="input-group">
-                <label>My Phone</label>
-                <input type="tel" id="inp-phone" readonly style="background-color: #f1f5f9; color: #64748b;">
+                <label>My Phone Number <span style="color:red">*</span></label>
+                <input type="tel" id="inp-phone" placeholder="03xx-xxxxxxx">
             </div>
         </div>
 
-        <div style="margin: 0 15px 10px; font-weight:bold; color:#475569;">Select Vehicle</div>
+        <div style="margin: 0 15px 10px; font-weight:bold; color:#475569;">Select Vehicle Type <span style="color:red">*</span></div>
         <div class="vehicle-grid">
             <div class="vehicle-item" id="v-bike" onclick="selectVehicle('bike', 'v-bike')"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
             <div class="vehicle-item" id="v-rickshaw" onclick="selectVehicle('rickshaw', 'v-rickshaw')"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
@@ -177,7 +184,11 @@
                 if (user) {
                     console.log("Auth Success:", user.uid);
                     currentUser = { id: user.uid, phone: user.phoneNumber || '' };
-                    document.getElementById('inp-phone').value = currentUser.phone;
+                    
+                    // Pre-fill phone if available, but let user edit it
+                    if(currentUser.phone) {
+                        document.getElementById('inp-phone').value = currentUser.phone;
+                    }
                     
                     // START LISTENING FOR REQUESTS
                     listenForMyRequests();
@@ -221,7 +232,7 @@
                     
                     div.onclick = () => openDetails(item.key);
 
-                    // FIX: Safer vehicleType check
+                    // Safer vehicleType check
                     const vType = r.vehicleType ? r.vehicleType.toUpperCase() : 'TAXI';
                     const displayStatus = r.status ? r.status.toUpperCase() : 'PENDING';
 
@@ -240,13 +251,21 @@
             });
         }
 
-        // --- 3. SUBMIT REQUEST (GPS ENFORCED) ---
+        // --- 3. SUBMIT REQUEST (STRICT GPS ENFORCED) ---
         function startRequestProcess() {
-            if (!selectedVehicle) return alert("Select a vehicle type.");
+            // FIX: Validate Vehicle Selection
+            if (!selectedVehicle) {
+                alert("Please click on a vehicle type (Bike, Rickshaw, etc.) to select it.");
+                return;
+            }
+            
             const pickup = document.getElementById('inp-pickup').value;
             const drop = document.getElementById('inp-drop').value;
+            const phone = document.getElementById('inp-phone').value;
             const landmark = document.getElementById('inp-landmark').value;
+            
             if (!pickup || !drop) return alert("Enter Pickup and Drop locations.");
+            if (!phone) return alert("Please enter your Phone Number.");
 
             // Show Loading
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -263,13 +282,12 @@
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         // Success: Found GPS
-                        submitData(pos.coords.latitude, pos.coords.longitude, pickup, drop, landmark);
+                        submitData(pos.coords.latitude, pos.coords.longitude, pickup, drop, landmark, phone);
                     },
                     (err) => {
-                        // Error: GPS Failed
+                        // Error: GPS Failed - STOP PROCESS
                         document.getElementById('loading-overlay').style.display = 'none';
                         
-                        // FIX: Strict GPS Prompts
                         if(err.code === 1) {
                             alert("⚠️ Permission Denied.\n\nPlease allow Location access in your browser settings to use RideLink.");
                         } else {
@@ -288,13 +306,13 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        function submitData(lat, lng, pickup, drop, landmark) {
+        function submitData(lat, lng, pickup, drop, landmark, phone) {
             document.getElementById('loading-text').innerText = "Sending Request...";
             document.getElementById('cancel-gps-btn').style.display = 'none';
             
             const reqData = {
                 riderId: currentUser.id,
-                riderPhone: currentUser.phone,
+                riderPhone: phone, // Use the manually entered phone
                 pickup: pickup, 
                 drop: drop, 
                 landmark: landmark,
@@ -334,7 +352,6 @@
                 if(!snap.exists()) { alert("Request deleted"); closeDetails(); return; }
                 const data = snap.val();
                 
-                // FIX: Safe status rendering
                 const safeStatus = (data.status || 'unknown').toUpperCase();
 
                 document.getElementById('disp-status').innerText = safeStatus;
@@ -364,9 +381,7 @@
                         document.getElementById('no-bids-msg').style.display = 'none';
                         Object.keys(data.bids).forEach(bidKey => {
                             const bid = data.bids[bidKey];
-                            
-                            // FIX: Using correct field (vehiclePlate) for Driver Plate
-                            const plate = bid.vehiclePlate || '---';
+                            const plate = bid.vehiclePlate || bid.plateNumber || '---';
 
                             const div = document.createElement('div');
                             div.className = 'bid-card';
