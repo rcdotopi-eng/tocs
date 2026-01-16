@@ -12,40 +12,16 @@
 
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        :root {
-            --primary-dark: #1e293b;
-            --accent-green: #10b981;
-            --warning-orange: #f59e0b;
-        }
-
         .login-wrapper { display: flex; align-items: center; justify-content: center; height: 100vh; }
-
-        .admin-header { 
-            background: var(--primary-dark); 
-            color: white; 
-            padding: 15px 25px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky; top: 0; z-index: 1000;
-        }
-
+        .admin-header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
         .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; }
-        
-        .badge-pending { background-color: var(--warning-orange); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-active { background-color: var(--accent-green); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-blocked { background-color: var(--primary-dark); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-
+        .badge-pending { background-color: #f59e0b; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
+        .badge-active { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
+        .badge-blocked { background-color: #1e293b; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
         .btn-action { font-size: 12px; padding: 5px 10px; margin: 2px; border-radius: 6px; }
-        
-        .nav-tabs .nav-link { color: #64748b; font-weight: 600; border: none; cursor: pointer; }
-        .nav-tabs .nav-link.active { color: var(--primary-dark); border-bottom: 3px solid var(--accent-green); background: transparent; }
-        
-        .danger-zone { border: 1px solid #fca5a5; background: #fef2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: var(--primary-dark); }
-        .detail-row { font-size: 0.85rem; line-height: 1.5; color: #475569; }
+        .nav-tabs .nav-link { color: #64748b; font-weight: 600; cursor: pointer; }
+        .nav-tabs .nav-link.active { color: #1e293b; border-bottom: 3px solid #10b981; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #1e293b; }
     </style>
 </head>
 <body>
@@ -61,7 +37,7 @@
 
     <div id="admin-dashboard" style="display: none;">
         <div class="admin-header">
-            <h5 style="margin:0;">💎 RideLink GEM <small style="opacity:0.7;">| Control Center</small></h5>
+            <h5 style="margin:0;">💎 RideLink GEM</h5>
             <div>
                 <span id="admin-email-display" class="mr-3 small text-light"></span>
                 <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
@@ -75,10 +51,9 @@
                 <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending Review</h6><div class="stat-value" id="pending-count">0</div></div></div>
                 <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">System Float</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
             </div>
-
-            <div class="danger-zone d-flex justify-content-between align-items-center">
-                <span><strong class="text-danger">⚠️ Database Reset:</strong> <small class="text-muted">Use only for testing.</small></span>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteAllUsers()">🗑 WIPE DATA</button>
+            
+            <div class="text-right mb-3">
+                 <button class="btn btn-outline-danger btn-sm" onclick="deleteAllUsers()">⚠️ Reset Database</button>
             </div>
 
             <div class="card">
@@ -93,11 +68,11 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="bg-light">
                                 <tr>
-                                    <th width="20%" class="pl-4">User</th>
-                                    <th width="35%">Details</th>
-                                    <th width="15%">Wallet</th>
-                                    <th width="10%">Status</th>
-                                    <th width="20%" class="text-right pr-4">Actions</th>
+                                    <th class="pl-4">User</th>
+                                    <th>Details</th>
+                                    <th>Wallet</th>
+                                    <th>Status</th>
+                                    <th class="text-right pr-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body"></tbody>
@@ -111,57 +86,42 @@
     <script src="firebase-init.js"></script>
 
     <script>
-        // ==========================================
+        console.log("Admin Panel Loaded: v4.0");
+
         // 🛑 CONFIG: ADMIN EMAILS
-        // ==========================================
         const ADMIN_EMAILS = [
-            "rcdotopi@gmail.com",
-            // Add other admins here
+            "rcdotopi@gmail.com"
         ];
 
         let currentTab = 'drivers'; 
         let allUsers = {}; 
 
-        // 1. INITIALIZATION CHECK
-        // We do NOT declare 'let db, auth' here because firebase-init.js already did it!
-        
-        window.onload = function() {
-            // Check if firebase-init.js loaded correctly
-            if (typeof firebase === 'undefined' || typeof db === 'undefined' || typeof auth === 'undefined') {
-                console.error("Firebase not found. Check firebase-init.js");
-                document.getElementById('error-msg').innerText = "Error: firebase-init.js not loaded.";
+        // 1. STARTUP
+        // We wait for window to load to ensure firebase-init.js has run
+        window.addEventListener('load', function() {
+            
+            // Check if DB exists (it comes from firebase-init.js)
+            if (typeof db === 'undefined' || typeof auth === 'undefined') {
+                document.getElementById('error-msg').innerText = "Error: firebase-init.js not loaded or variables missing.";
                 return;
             }
 
-            console.log("Admin Dashboard: Hooking into existing Firebase connection...");
-            initAuthListener();
-        };
-
-        // 2. AUTH LOGIC
-        function initAuthListener() {
+            // Start Listening for Login
             auth.onAuthStateChanged((user) => {
                 if (user && ADMIN_EMAILS.includes(user.email)) {
-                    // Success
-                    console.log("Admin Logged In:", user.email);
                     document.getElementById('admin-login').style.display = 'none';
                     document.getElementById('admin-dashboard').style.display = 'block';
                     document.getElementById('admin-email-display').innerText = user.email;
                     loadUsers();
                 } else {
-                    // Not logged in or Not Admin
                     document.getElementById('admin-login').style.display = 'flex';
                     document.getElementById('admin-dashboard').style.display = 'none';
-                    
-                    if(user) {
-                        // User is logged in to Google, but email is not in the ADMIN list
-                        document.getElementById('error-msg').innerText = "🚫 Access Denied: " + user.email;
-                        // Optional: auth.signOut(); // force logout if you want
-                    }
+                    if(user) document.getElementById('error-msg').innerText = "🚫 Not an Admin: " + user.email;
                 }
             });
-        }
+        });
 
-        // Make these functions global so HTML buttons can see them
+        // 2. BUTTON FUNCTIONS (Global)
         window.adminLogin = function() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).catch(e => alert(e.message));
@@ -178,7 +138,7 @@
             renderTable();
         }
 
-        // 3. DATA LOADING
+        // 3. LOAD DATA
         function loadUsers() {
             db.ref('users').on('value', (snapshot) => {
                 allUsers = snapshot.val() || {};
@@ -187,11 +147,9 @@
             });
         }
 
-        // 4. RENDER TABLE
         function renderTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
-
             if(!allUsers) return;
 
             Object.keys(allUsers).forEach(key => {
@@ -201,24 +159,14 @@
 
                 if (currentTab === 'drivers' && (user.driverStatus || user.role === 'driver')) showRow = true;
                 if (currentTab === 'riders' && (user.riderStatus || user.role === 'rider')) showRow = true;
-
                 if (!showRow) return;
 
                 const status = currentTab === 'drivers' ? (user.driverStatus || 'pending') : (user.riderStatus || 'pending');
-                
                 let badgeClass = status === 'active' ? 'badge-active' : (status === 'blocked' ? 'badge-blocked' : 'badge-pending');
-                const badgeHtml = `<span class="${badgeClass}">${status.toUpperCase()}</span>`;
-
-                let details = '';
-                if(currentTab === 'drivers') {
-                    details = `<div class="detail-row">
-                            <strong>Parent:</strong> ${user.parentName || '-'}<br>
-                            <strong>CNIC:</strong> ${user.cnic || '-'}<br>
-                            <strong>Veh:</strong> ${user.vehicleType || '-'} (${user.vehicleColor || ''}) - ${user.vehicleReg || ''}
-                        </div>`;
-                } else {
-                    details = `<div class="detail-row"><strong>Phone:</strong> ${user.phone || '-'}</div>`;
-                }
+                
+                let details = currentTab === 'drivers' 
+                    ? `<small>Parent: ${user.parentName || '-'}<br>CNIC: ${user.cnic || '-'}<br>Veh: ${user.vehicleType || '-'} (${user.vehicleReg || ''})</small>`
+                    : `<small>Phone: ${user.phone || '-'}</small>`;
 
                 let btns = '';
                 if(status === 'pending') {
@@ -233,11 +181,10 @@
                     <td class="pl-4"><strong>${user.name || 'Unknown'}</strong><br><small class="text-muted">${user.email}</small></td>
                     <td>${details}</td>
                     <td class="font-weight-bold ${user.wallet < 0 ? 'text-danger' : 'text-success'}">₹ ${user.wallet || 0}</td>
-                    <td>${badgeHtml}</td>
+                    <td><span class="${badgeClass}">${status.toUpperCase()}</span></td>
                     <td class="text-right pr-4">${btns}</td>
                 `;
-                if(status === 'pending') tbody.prepend(tr);
-                else tbody.append(tr);
+                if(status === 'pending') tbody.prepend(tr); else tbody.append(tr);
             });
         }
 
@@ -255,40 +202,41 @@
             document.getElementById('total-wallet').innerText = "₹ " + wallet.toLocaleString();
         }
 
-        // 5. ACTIONS
+        // 4. ACTIONS
         window.approveUser = function(uid, type) {
-            const bonus = type === 'drivers' ? 1000 : 500; 
-            if(confirm(`Approve and add ₹${bonus} credit?`)) {
-                const updates = {};
-                if(type === 'drivers') updates.driverStatus = 'active'; else updates.riderStatus = 'active';
-                db.ref('users/' + uid + '/wallet').once('value', snap => {
-                    updates.wallet = (snap.val() || 0) + bonus;
-                    db.ref('users/' + uid).update(updates);
+            const bonus = type === 'drivers' ? 1000 : 500;
+            if(confirm(`Approve and add ₹${bonus}?`)) {
+                let updates = { wallet: bonus }; // Default overwrites if weird structure, but better to fetch
+                db.ref('users/'+uid).once('value', s => {
+                    const current = s.val().wallet || 0;
+                    const u = {};
+                    if(type === 'drivers') u.driverStatus = 'active'; else u.riderStatus = 'active';
+                    u.wallet = current + bonus;
+                    db.ref('users/'+uid).update(u);
                 });
             }
-        };
-
-        window.editWallet = function(uid, current) {
-            const val = prompt(`Current: ₹${current}\nRider Cancel Penalty: Set to 250\nDriver Cancel Penalty: Deduct 500`, current);
-            if(val) db.ref('users/' + uid).update({ wallet: parseInt(val) });
-        };
+        }
+        
+        window.editWallet = function(uid, cur) {
+            let val = prompt(`Current: ₹${cur}\nPenalty (Rider): 250\nPenalty (Driver): -500`, cur);
+            if(val) db.ref('users/'+uid).update({wallet: parseInt(val)});
+        }
 
         window.blockUser = function(uid, type) {
             if(confirm("Block user?")) {
-                const updates = {};
-                if(type === 'drivers') updates.driverStatus = 'blocked'; else updates.riderStatus = 'blocked';
-                db.ref('users/' + uid).update(updates);
+                let u = {};
+                if(type === 'drivers') u.driverStatus = 'blocked'; else u.riderStatus = 'blocked';
+                db.ref('users/'+uid).update(u);
             }
-        };
+        }
 
         window.deleteUser = function(uid) {
-            if(confirm("Permanently delete?")) db.ref('users/' + uid).remove();
-        };
+            if(confirm("Delete user permanent?")) db.ref('users/'+uid).remove();
+        }
 
         window.deleteAllUsers = function() {
-            if(prompt("Type DELETE to wipe all users:") === 'DELETE') db.ref('users').remove();
-        };
-
+            if(prompt("Type DELETE to wipe DB:") === 'DELETE') db.ref('users').remove();
+        }
     </script>
 </body>
 </html>
