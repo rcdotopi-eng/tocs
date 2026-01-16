@@ -32,12 +32,17 @@
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
         .vehicle-item { 
             background: white; border: 2px solid #e2e8f0; border-radius: 12px; 
-            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; 
+            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; position: relative;
         }
         /* Active State */
         .vehicle-item.selected { 
             border-color: #10b981; background-color: #ecfdf5; 
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); transform: scale(1.02);
+        }
+        .vehicle-item.selected::after {
+            content: '✔'; position: absolute; top: 5px; right: 5px; 
+            background: #10b981; color: white; border-radius: 50%; 
+            width: 16px; height: 16px; font-size: 10px; line-height: 16px;
         }
         .v-icon { font-size: 32px; display: block; margin-bottom: 5px; }
         .v-name { font-size: 12px; font-weight: 700; color: #334155; }
@@ -90,13 +95,13 @@
 
         <div style="margin: 0 15px 10px; font-weight:bold; color:#475569;">Select Vehicle Type <span style="color:red">*</span></div>
         <div class="vehicle-grid">
-            <div class="vehicle-item" id="v-bike" onclick="selectVehicle('bike', 'v-bike')"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
-            <div class="vehicle-item" id="v-rickshaw" onclick="selectVehicle('rickshaw', 'v-rickshaw')"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
-            <div class="vehicle-item" id="v-car" onclick="selectVehicle('car', 'v-car')"><span class="v-icon">🚗</span><span class="v-name">Car</span></div>
-            <div class="vehicle-item" id="v-carry" onclick="selectVehicle('carry', 'v-carry')"><span class="v-icon">🚐</span><span class="v-name">Carry</span></div>
-            <div class="vehicle-item" id="v-coaster" onclick="selectVehicle('coaster', 'v-coaster')"><span class="v-icon">🚌</span><span class="v-name">Coaster</span></div>
-            <div class="vehicle-item" id="v-loader" onclick="selectVehicle('loader', 'v-loader')"><span class="v-icon">🚚</span><span class="v-name">Loader</span></div>
-            <div class="vehicle-item" id="v-luxury" onclick="selectVehicle('luxury', 'v-luxury')"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
+            <div class="vehicle-item" data-type="bike" onclick="selectVehicle('bike', this)"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
+            <div class="vehicle-item" data-type="rickshaw" onclick="selectVehicle('rickshaw', this)"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
+            <div class="vehicle-item" data-type="car" onclick="selectVehicle('car', this)"><span class="v-icon">🚗</span><span class="v-name">Car</span></div>
+            <div class="vehicle-item" data-type="carry" onclick="selectVehicle('carry', this)"><span class="v-icon">🚐</span><span class="v-name">Carry</span></div>
+            <div class="vehicle-item" data-type="coaster" onclick="selectVehicle('coaster', this)"><span class="v-icon">🚌</span><span class="v-name">Coaster</span></div>
+            <div class="vehicle-item" data-type="loader" onclick="selectVehicle('loader', this)"><span class="v-icon">🚚</span><span class="v-name">Loader</span></div>
+            <div class="vehicle-item" data-type="luxury" onclick="selectVehicle('luxury', this)"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
         </div>
 
         <div style="margin: 30px 15px 100px;">
@@ -185,7 +190,7 @@
                     console.log("Auth Success:", user.uid);
                     currentUser = { id: user.uid, phone: user.phoneNumber || '' };
                     
-                    // Pre-fill phone if available, but let user edit it
+                    // Pre-fill phone if available from Google
                     if(currentUser.phone) {
                         document.getElementById('inp-phone').value = currentUser.phone;
                     }
@@ -198,7 +203,16 @@
             });
         });
 
-        // --- 2. LISTENER ---
+        // --- 2. SELECT VEHICLE (UI) ---
+        function selectVehicle(type, element) {
+            selectedVehicle = type;
+            // Remove 'selected' from all
+            document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
+            // Add 'selected' to clicked
+            element.classList.add('selected');
+        }
+
+        // --- 3. LISTENER ---
         function listenForMyRequests() {
             if (!currentUser) return;
             const listContainer = document.getElementById('my-requests-list');
@@ -251,9 +265,9 @@
             });
         }
 
-        // --- 3. SUBMIT REQUEST (STRICT GPS ENFORCED) ---
+        // --- 4. SUBMIT REQUEST (GPS ENFORCED) ---
         function startRequestProcess() {
-            // FIX: Validate Vehicle Selection
+            // Check vehicle selection
             if (!selectedVehicle) {
                 alert("Please click on a vehicle type (Bike, Rickshaw, etc.) to select it.");
                 return;
@@ -331,6 +345,7 @@
                     document.getElementById('inp-pickup').value = '';
                     document.getElementById('inp-drop').value = '';
                     document.getElementById('inp-landmark').value = '';
+                    // Keep vehicle selected or reset? Let's reset for clarity
                     selectedVehicle = null;
                     document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
                 })
@@ -340,7 +355,7 @@
                 });
         }
 
-        // --- 4. DETAILS VIEW ---
+        // --- 5. DETAILS VIEW ---
         function openDetails(key) {
             activeReqId = key;
             document.getElementById('view-home').style.display = 'none';
@@ -426,12 +441,6 @@
                 db.ref('requests/' + activeReqId).update({ status: 'cancelled' })
                 .then(() => closeDetails());
             }
-        }
-
-        function selectVehicle(type, id) {
-            selectedVehicle = type;
-            document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-            document.getElementById(id).classList.add('selected');
         }
 
         function logout() { auth.signOut().then(() => window.location.href = "index.html"); }
