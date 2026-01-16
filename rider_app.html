@@ -14,19 +14,16 @@
     <style>
         body { background: #f4f6f9; padding-bottom: 100px; font-family: sans-serif; }
         
-        /* HEADER */
         .page-header { background: #fff; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .page-header h2 { margin: 0; font-size: 18px; color: #333; }
         .logout-btn { color: #dc3545; font-size: 13px; font-weight: bold; cursor: pointer; text-decoration: underline;}
 
-        /* FORM CARD */
         .form-card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
         .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fafafa; }
         .input-group input:focus { border-color: #007bff; outline: none; background: #fff; }
 
-        /* VEHICLE GRID */
         .grid-title { margin: 0 15px 10px; font-size: 14px; font-weight: bold; color: #555; }
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
         .vehicle-item { background: white; border: 2px solid #eee; border-radius: 10px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
@@ -34,68 +31,102 @@
         .v-icon { font-size: 28px; display: block; margin-bottom: 5px; }
         .v-name { font-size: 11px; font-weight: 600; color: #444; }
 
-        /* REQUEST CARD */
         .requests-section { margin-top: 30px; padding: 15px; }
         .req-card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; cursor: pointer; }
         .req-status { float: right; font-size: 12px; font-weight: bold; color: #ffc107; margin-right: 20px;}
 
-        /* BOTTOM BUTTON */
         .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; z-index: 100; }
         .btn-primary { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
 
-        /* LOADING OVERLAY */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* DETAILS VIEW STYLES */
+        #view-details { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f9; z-index: 200; overflow-y: auto; display: none; }
+        .detail-header { background: white; padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; position: sticky; top: 0; z-index: 201; }
+        .back-btn { font-size: 24px; margin-right: 15px; cursor: pointer; }
+        .bid-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .btn-accept { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; }
+        .btn-cancel-req { width: 100%; background: #fff; color: #dc3545; border: 1px solid #dc3545; padding: 12px; margin-top: 20px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="page-header">
-        <h2>Request a Ride</h2>
-        <a class="logout-btn" onclick="logout()">Logout</a>
+    <div id="view-home">
+        <div class="page-header">
+            <h2>Request a Ride</h2>
+            <a class="logout-btn" onclick="logout()">Logout</a>
+        </div>
+
+        <div class="form-card">
+            <div class="input-group">
+                <label>Pickup Point <span style="color:red">*</span></label>
+                <input type="text" id="inp-pickup" placeholder="Enter Pickup Location">
+            </div>
+            <div class="input-group">
+                <label>Dropping Point <span style="color:red">*</span></label>
+                <input type="text" id="inp-drop" placeholder="Enter Drop Location">
+            </div>
+            <div class="input-group">
+                <label>Landmark (Optional)</label>
+                <input type="text" id="inp-landmark" placeholder="Near Masjid, Park, etc.">
+            </div>
+            <div class="input-group">
+                <label>Contact Number <span style="color:red">*</span></label>
+                <input type="tel" id="inp-phone" placeholder="0300-1234567">
+            </div>
+        </div>
+
+        <div class="grid-title">Select Vehicle Type</div>
+        
+        <div class="vehicle-grid">
+            <div class="vehicle-item" id="v-bike" onclick="selectVehicle('bike', 'v-bike')"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
+            <div class="vehicle-item" id="v-rickshaw" onclick="selectVehicle('rickshaw', 'v-rickshaw')"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
+            <div class="vehicle-item" id="v-car" onclick="selectVehicle('car', 'v-car')"><span class="v-icon">🚗</span><span class="v-name">Car</span></div>
+            <div class="vehicle-item" id="v-carry" onclick="selectVehicle('carry', 'v-carry')"><span class="v-icon">🚐</span><span class="v-name">Carry Daba</span></div>
+            <div class="vehicle-item" id="v-coaster" onclick="selectVehicle('coaster', 'v-coaster')"><span class="v-icon">🚌</span><span class="v-name">Coaster</span></div>
+            <div class="vehicle-item" id="v-loader" onclick="selectVehicle('loader', 'v-loader')"><span class="v-icon">🚚</span><span class="v-name">Loader</span></div>
+            <div class="vehicle-item" id="v-luxury" onclick="selectVehicle('luxury', 'v-luxury')"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
+        </div>
+
+        <div class="requests-section">
+            <h4 style="margin-bottom: 10px; color: #555; font-size: 14px;">My Active Requests</h4>
+            <div id="my-requests-list">
+                <p style="color:#999; font-size:12px; text-align: center;">Loading...</p>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="btn-primary" onclick="startRequestProcess()">Submit Request</button>
+        </div>
     </div>
 
-    <div class="form-card">
-        <div class="input-group">
-            <label>Pickup Point <span style="color:red">*</span></label>
-            <input type="text" id="inp-pickup" placeholder="Enter Pickup Location">
+    <div id="view-details">
+        <div class="detail-header">
+            <span class="back-btn" onclick="closeDetails()">←</span>
+            <h3 style="margin:0; font-size:18px;">Ride Details</h3>
         </div>
-        <div class="input-group">
-            <label>Dropping Point <span style="color:red">*</span></label>
-            <input type="text" id="inp-drop" placeholder="Enter Drop Location">
-        </div>
-        <div class="input-group">
-            <label>Landmark (Optional)</label>
-            <input type="text" id="inp-landmark" placeholder="Near Masjid, Park, etc.">
-        </div>
-        <div class="input-group">
-            <label>Contact Number <span style="color:red">*</span></label>
-            <input type="tel" id="inp-phone" placeholder="0300-1234567">
-        </div>
-    </div>
+        <div style="padding: 20px;">
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 id="det-status" style="color: #007bff; margin-top: 0;">LOADING...</h4>
+                <p><strong>From:</strong> <span id="det-pickup"></span></p>
+                <p><strong>To:</strong> <span id="det-drop"></span></p>
+                <p><strong>Confirmed Price:</strong> <span id="det-price">TBD</span></p>
+            </div>
 
-    <div class="grid-title">Select Vehicle Type</div>
-    
-    <div class="vehicle-grid">
-        <div class="vehicle-item" id="v-bike" onclick="selectVehicle('bike', 'v-bike')"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
-        <div class="vehicle-item" id="v-rickshaw" onclick="selectVehicle('rickshaw', 'v-rickshaw')"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
-        <div class="vehicle-item" id="v-car" onclick="selectVehicle('car', 'v-car')"><span class="v-icon">🚗</span><span class="v-name">Car</span></div>
-        <div class="vehicle-item" id="v-carry" onclick="selectVehicle('carry', 'v-carry')"><span class="v-icon">🚐</span><span class="v-name">Carry Daba</span></div>
-        <div class="vehicle-item" id="v-coaster" onclick="selectVehicle('coaster', 'v-coaster')"><span class="v-icon">🚌</span><span class="v-name">Coaster</span></div>
-        <div class="vehicle-item" id="v-loader" onclick="selectVehicle('loader', 'v-loader')"><span class="v-icon">🚚</span><span class="v-name">Loader</span></div>
-        <div class="vehicle-item" id="v-luxury" onclick="selectVehicle('luxury', 'v-luxury')"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
-    </div>
+            <div id="section-bids" style="display:none;">
+                <h5 style="color: #555;">Driver Offers</h5>
+                <div id="bids-list"></div>
+            </div>
 
-    <div class="requests-section">
-        <h4 style="margin-bottom: 10px; color: #555; font-size: 14px;">My Active Requests</h4>
-        <div id="my-requests-list">
-            <p style="color:#999; font-size:12px; text-align: center;">Loading...</p>
+            <div id="section-confirmed" style="display:none; background:#d4edda; padding:15px; border-radius:8px; color:#155724; margin-bottom:20px;">
+                <strong>✅ Ride Confirmed!</strong><br>
+                Driver is on the way.
+            </div>
+
+            <button id="btn-cancel-ride" class="btn-cancel-req" onclick="triggerCancel()">Cancel Request</button>
         </div>
-    </div>
-
-    <div class="bottom-bar">
-        <button class="btn-primary" onclick="startRequestProcess()">Submit Request</button>
     </div>
 
     <div id="loading-overlay">
@@ -111,32 +142,31 @@
         let riderUser = null;
         let riderVehicle = null;
         let isRiderProcessing = false;
+        let activeReqRef = null;
+        let currentReqId = null;
+        let currentReqData = null;
 
         // --- INIT ---
         window.onload = function() {
-            // Wait for Firebase to check Auth
             if(firebase.auth().currentUser) {
                 initApp(firebase.auth().currentUser);
             } else {
                 firebase.auth().onAuthStateChanged(user => {
                     if(user) initApp(user);
-                    else window.location.href = "index.html"; // Changed from rider_login.html
+                    else window.location.href = "index.html";
                 });
             }
         };
 
         function initApp(user) {
-            // Try to get user from local storage, or build from Auth
             const saved = localStorage.getItem("taxiUser");
             if (saved) {
                 riderUser = JSON.parse(saved);
-                // Ensure ID matches current auth
                 riderUser.id = user.uid;
             } else {
                 riderUser = { id: user.uid, name: user.displayName || 'Rider', phone: '' };
             }
 
-            // Auto-fill phone
             if(riderUser.phone) {
                 document.getElementById('inp-phone').value = riderUser.phone;
             }
@@ -151,47 +181,49 @@
             document.getElementById(elementId).classList.add('selected');
         }
 
-        // --- SUBMIT PROCESS (STRICT GPS) ---
+        // --- SUBMIT PROCESS ---
         function startRequestProcess() {
-            const pickup = document.getElementById('inp-pickup').value;
-            const drop = document.getElementById('inp-drop').value;
-            const phone = document.getElementById('inp-phone').value;
-            
-            if(!pickup || !drop || !phone) return alert("Please fill all fields.");
-            if(!riderVehicle) return alert("Please select a Vehicle Type.");
+            // Check blocked status first
+            db.ref('users/' + riderUser.id + '/isBlocked').once('value', snap => {
+                if(snap.val() === true) {
+                    return alert("🚫 You are blocked from making new requests due to previous penalty unpaid.");
+                }
+                
+                const pickup = document.getElementById('inp-pickup').value;
+                const drop = document.getElementById('inp-drop').value;
+                const phone = document.getElementById('inp-phone').value;
+                
+                if(!pickup || !drop || !phone) return alert("Please fill all fields.");
+                if(!riderVehicle) return alert("Please select a Vehicle Type.");
 
-            isRiderProcessing = true;
-            document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
-            document.getElementById('cancel-gps-btn').style.display = 'block';
+                isRiderProcessing = true;
+                document.getElementById('loading-overlay').style.display = 'flex';
+                document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
+                document.getElementById('cancel-gps-btn').style.display = 'block';
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        if(!isRiderProcessing) return; 
-                        document.getElementById('loading-text').innerText = "✅ GPS Found! Sending...";
-                        setTimeout(() => {
-                            sendToBackend(position.coords.latitude, position.coords.longitude);
-                        }, 1000);
-                    },
-                    (error) => {
-                        if(!isRiderProcessing) return;
-                        document.getElementById('loading-overlay').style.display = 'none';
-                        if(error.code === 1) {
-                            alert("Permission Denied. Please enable Location in your browser settings.");
-                        } else {
-                            alert("⚠️ Weak GPS Signal!\n\nPlease move to an open area (outdoors) to get a signal. We cannot book without your location.");
-                        }
-                    },
-                    { timeout: 15000, enableHighAccuracy: true }
-                );
-            } else {
-                alert("GPS not supported.");
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            if(!isRiderProcessing) return; 
+                            document.getElementById('loading-text').innerText = "✅ GPS Found! Sending...";
+                            setTimeout(() => {
+                                sendToBackend(position.coords.latitude, position.coords.longitude);
+                            }, 1000);
+                        },
+                        (error) => {
+                            if(!isRiderProcessing) return;
+                            document.getElementById('loading-overlay').style.display = 'none';
+                            alert("⚠️ Weak GPS Signal! Move outdoors.");
+                        },
+                        { timeout: 15000, enableHighAccuracy: true }
+                    );
+                } else {
+                    alert("GPS not supported.");
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }
+            });
         }
 
-        // --- SEND TO BACKEND ---
         function sendToBackend(lat, lng) {
             const requestData = {
                 riderId: riderUser.id,
@@ -210,17 +242,12 @@
             db.ref('requests').push(requestData).then((snap) => {
                 isRiderProcessing = false;
                 document.getElementById('loading-overlay').style.display = 'none';
-                
                 alert("✅ Request Sent Successfully!");
-                
-                // --- RESET FORM ---
                 document.getElementById('inp-pickup').value = "";
                 document.getElementById('inp-drop').value = "";
                 document.getElementById('inp-landmark').value = "";
-                
                 riderVehicle = null;
                 document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-                
             }).catch(error => {
                 alert("Error: " + error.message);
                 cancelProcess();
@@ -232,7 +259,7 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        // --- LOAD ALL ACTIVE REQUESTS ---
+        // --- LOAD REQUESTS ---
         function loadMyActiveRequests() {
             if(!riderUser || !riderUser.id) return;
             
@@ -245,33 +272,29 @@
                 }
 
                 container.innerHTML = ''; 
-
                 let reqList = [];
-                snap.forEach(child => {
-                    reqList.push({ key: child.key, data: child.val() });
-                });
+                snap.forEach(child => reqList.push({ key: child.key, data: child.val() }));
                 reqList.reverse();
 
                 let count = 0;
                 reqList.forEach(item => {
                     const req = item.data;
-                    
-                    if(req.status === 'deleted' || req.status === 'cancelled' || req.status === 'completed') return;
+                    if(req.status === 'deleted' || req.status === 'completed') return; // Show Cancelled/Investigation
 
                     count++;
                     const div = document.createElement('div');
                     div.className = 'req-card';
                     
-                    // OPEN DETAILS (You can link this to your details page)
-                    // For now, let's just alert
-                    div.onclick = function() {
-                        // If you have a details page, uncomment below:
-                        // window.location.href = "rider_details.html?id=" + item.key;
-                        alert("Ride: " + req.pickup + " to " + req.drop + "\nStatus: " + req.status);
-                    };
+                    // OPEN DETAILS
+                    div.onclick = function() { openRequestDetails(item.key); };
+
+                    // Display correct status
+                    let displayStatus = req.status.toUpperCase();
+                    // Fallback logic for pending state
+                    if(req.status === 'pending' && req.bids) displayStatus = "OFFERS RECEIVED";
 
                     div.innerHTML = `
-                        <span class="req-status">${req.status.toUpperCase()}</span>
+                        <span class="req-status">${displayStatus}</span>
                         <span class="req-arrow">❯</span>
                         <strong>${req.pickup}</strong> to <strong>${req.drop}</strong><br>
                         <small style="color:#666;">Vehicle: ${req.vehicleType}</small>
@@ -279,10 +302,140 @@
                     container.appendChild(div);
                 });
 
-                if(count === 0) {
-                    container.innerHTML = '<p style="color:#999; text-align: center; margin-top:20px;">No active requests.</p>';
+                if(count === 0) container.innerHTML = '<p style="color:#999; text-align: center; margin-top:20px;">No active requests.</p>';
+            });
+        }
+
+        // --- DETAILS & BIDDING UI ---
+        function openRequestDetails(reqId) {
+            currentReqId = reqId;
+            document.getElementById('view-home').style.display = 'none';
+            document.getElementById('view-details').style.display = 'block';
+
+            if(activeReqRef) activeReqRef.off();
+            activeReqRef = db.ref('requests/' + reqId);
+
+            activeReqRef.on('value', snap => {
+                if(!snap.exists()) { closeDetails(); return; }
+                const r = snap.val();
+                currentReqData = r;
+
+                // Status Logic
+                let st = r.status.toUpperCase();
+                if(r.status === 'pending' && r.bids) st = "OFFERS RECEIVED";
+                document.getElementById('det-status').innerText = st;
+                
+                document.getElementById('det-pickup').innerText = r.pickup;
+                document.getElementById('det-drop').innerText = r.drop;
+                document.getElementById('det-price').innerText = r.agreedPrice ? "Rs. " + r.agreedPrice : "Pending Offer";
+
+                const sectionBids = document.getElementById('section-bids');
+                const sectionConf = document.getElementById('section-confirmed');
+                const btnCancel = document.getElementById('btn-cancel-ride');
+
+                // State Management
+                if(r.status === 'CONFIRMED') {
+                    sectionBids.style.display = 'none';
+                    sectionConf.style.display = 'block';
+                    // Show driver cancelled message if applicable
+                } else if (r.status === 'CANCELLED') {
+                    sectionBids.style.display = 'none';
+                    sectionConf.style.display = 'none';
+                    if(r.cancelledBy === 'DRIVER') alert("Driver cancelled the ride. Please request again or choose another offer.");
+                } else {
+                    // Pending / Offers Received
+                    sectionBids.style.display = 'block';
+                    sectionConf.style.display = 'none';
+                    renderBids(r.bids, reqId);
                 }
             });
+        }
+
+        function renderBids(bids, reqId) {
+            const list = document.getElementById('bids-list');
+            list.innerHTML = '';
+            if(!bids) {
+                list.innerHTML = '<p>Waiting for drivers...</p>';
+                return;
+            }
+            Object.keys(bids).forEach(key => {
+                const bid = bids[key];
+                const div = document.createElement('div');
+                div.className = 'bid-card';
+                div.innerHTML = `
+                    <div>
+                        <strong>${bid.driverName}</strong><br>
+                        <small>${bid.vehicleModel} (${bid.vehiclePlate})</small>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold; color:#28a745;">Rs. ${bid.price}</div>
+                        <button class="btn-accept" onclick="acceptOffer('${reqId}', '${key}', ${bid.price})">Accept</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function acceptOffer(reqId, driverId, price) {
+            if(!confirm("Confirm ride for Rs. " + price + "?")) return;
+            
+            // 1. Update Request
+            db.ref('requests/' + reqId).update({
+                status: 'CONFIRMED',
+                selectedDriverId: driverId,
+                agreedPrice: price,
+                confirmedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            // 2. Delete other bids (Read first then delete non-matches)
+            db.ref('requests/' + reqId + '/bids').once('value', snap => {
+                snap.forEach(child => {
+                    if(child.key !== driverId) {
+                        child.ref.remove();
+                    }
+                });
+            });
+        }
+
+        function triggerCancel() {
+            if(!currentReqData) return;
+            const status = currentReqData.status;
+
+            if(status === 'CONFIRMED') {
+                // PENALTY LOGIC
+                const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
+                if(confirm(msg)) {
+                    // Deduct Balance & Block
+                    const userRef = db.ref('users/' + riderUser.id);
+                    userRef.child('balance').once('value', snap => {
+                        const currentBal = snap.val() || 0;
+                        userRef.update({
+                            balance: currentBal - 300,
+                            isBlocked: true
+                        });
+                    });
+
+                    // Cancel Request
+                    db.ref('requests/' + currentReqId).update({
+                        status: 'CANCELLED',
+                        cancelledBy: 'RIDER',
+                        cancellationReason: 'CONFIRMED_CANCEL_PENALTY'
+                    });
+                    closeDetails();
+                }
+            } else {
+                // No Penalty
+                if(confirm("Delete this request?")) {
+                    db.ref('requests/' + currentReqId).update({ status: 'CANCELLED', cancelledBy: 'RIDER' });
+                    closeDetails();
+                }
+            }
+        }
+
+        function closeDetails() {
+            document.getElementById('view-details').style.display = 'none';
+            document.getElementById('view-home').style.display = 'block';
+            if(activeReqRef) activeReqRef.off();
         }
 
         function logout() {
