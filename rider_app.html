@@ -4,14 +4,14 @@
     <title>Rider App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#007bff">
-    <link rel="stylesheet" href="style.css">
     
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background: #f4f6f9; font-family: sans-serif; padding-bottom: 100px; }
+        body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
         
         /* SHARED HEADER */
         .page-header {
@@ -20,49 +20,50 @@
             display: flex; justify-content: space-between; align-items: center;
             position: sticky; top: 0; z-index: 50;
         }
-        .page-header h2 { margin: 0; font-size: 18px; color: #333; }
+        .page-header h2 { margin: 0; font-size: 18px; color: #333; font-weight: 700; }
         .action-btn { color: #dc3545; font-size: 13px; font-weight: bold; cursor: pointer; text-decoration: none;}
 
         /* CARDS */
-        .card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; }
         
         /* INPUTS */
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fafafa; }
-        .input-group input:focus { border-color: #007bff; outline: none; background: #fff; }
+        .input-group { margin-bottom: 15px; width: 100%; }
+        .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; text-align: left; width: 100%; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #e1e1e1; border-radius: 8px; font-size: 16px; background: #fafafa; transition: 0.3s; }
+        .input-group input:focus { border-color: #007bff; outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
 
         /* VEHICLE GRID */
         .grid-title { margin: 0 15px 10px; font-size: 14px; font-weight: bold; color: #555; }
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
-        .vehicle-item { background: white; border: 2px solid #eee; border-radius: 10px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
-        .vehicle-item.selected { border-color: #007bff; background-color: #e3f2fd; transform: scale(1.02); box-shadow: 0 0 8px rgba(0,123,255,0.4); }
+        .vehicle-item { background: white; border: 2px solid #eee; border-radius: 12px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
+        .vehicle-item.selected { border-color: #007bff; background-color: #e3f2fd; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,123,255,0.2); }
         .v-icon { font-size: 28px; display: block; margin-bottom: 5px; }
         .v-name { font-size: 11px; font-weight: 600; color: #444; }
 
         /* REQUEST LIST ITEM */
         .req-card { 
-            background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107; 
-            margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; cursor: pointer; 
+            background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #ffc107; 
+            margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; cursor: pointer; 
         }
-        .req-card:active { background-color: #f9f9f9; }
-        .req-arrow { position: absolute; right: 15px; top: 40%; color: #ccc; font-size: 20px; }
-        .req-status { float: right; font-size: 12px; font-weight: bold; color: #ffc107; margin-right: 20px;}
+        .req-arrow { position: absolute; right: 15px; top: 35%; color: #ccc; font-size: 20px; }
+        .req-status { float: right; font-size: 11px; font-weight: bold; background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; margin-right: 20px;}
 
         /* DETAILS VIEW STYLES */
-        .label { font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold; }
-        .val { font-size: 16px; color: #333; margin-bottom: 10px; font-weight: 500; }
-        .confirmed-box { background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px; text-align: center; color: #155724; }
+        .label { font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold; margin-top: 10px; }
+        .val { font-size: 16px; color: #333; margin-bottom: 5px; font-weight: 500; }
+        .confirmed-box { background: #d1e7dd; border: 1px solid #badbcc; border-radius: 12px; padding: 25px; text-align: center; color: #0f5132; }
         .driver-avatar { font-size: 40px; margin-bottom: 10px; display: block; }
         
         /* BIDS */
-        .bid-card { background: #fff; border: 2px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .bid-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
         .bid-price { font-size: 20px; font-weight: bold; color: #28a745; }
-        .btn-confirm { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 12px; cursor: pointer; }
-        .btn-delete { background: #dc3545; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-confirm { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-delete { background: #fee2e2; color: #dc3545; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
         /* BOTTOM BAR & OVERLAY */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; z-index: 100; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; z-index: 100; }
+        .btn-primary { width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: bold; background: #007bff; border: none; color: white; }
+        
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -78,24 +79,24 @@
 
         <div class="card">
             <div class="input-group">
-                <label>Pickup Point <span style="color:red">*</span></label>
-                <input type="text" id="inp-pickup" placeholder="Enter Pickup Location">
+                <label>Pickup Location <span style="color:red">*</span></label>
+                <input type="text" id="inp-pickup" placeholder="E.g. Main Market">
             </div>
             <div class="input-group">
-                <label>Dropping Point <span style="color:red">*</span></label>
-                <input type="text" id="inp-drop" placeholder="Enter Drop Location">
+                <label>Dropoff Location <span style="color:red">*</span></label>
+                <input type="text" id="inp-drop" placeholder="E.g. City Hospital">
             </div>
             <div class="input-group">
                 <label>Landmark (Optional)</label>
-                <input type="text" id="inp-landmark" placeholder="Near Masjid, Park, etc.">
+                <input type="text" id="inp-landmark" placeholder="Near Masjid, Park...">
             </div>
             <div class="input-group">
                 <label>Contact Number <span style="color:red">*</span></label>
-                <input type="tel" id="inp-phone" placeholder="0300-1234567">
+                <input type="tel" id="inp-phone" readonly style="background-color: #eee; color: #777;">
             </div>
         </div>
 
-        <div class="grid-title">Select Vehicle Type</div>
+        <div class="grid-title">Select Vehicle</div>
         <div class="vehicle-grid">
             <div class="vehicle-item" id="v-bike" onclick="selectVehicle('bike', 'v-bike')"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
             <div class="vehicle-item" id="v-rickshaw" onclick="selectVehicle('rickshaw', 'v-rickshaw')"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
@@ -106,10 +107,10 @@
             <div class="vehicle-item" id="v-luxury" onclick="selectVehicle('luxury', 'v-luxury')"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
         </div>
 
-        <div style="margin: 30px 15px 15px;">
-            <h4 style="margin-bottom: 10px; color: #555; font-size: 14px;">My Active Requests</h4>
+        <div style="margin: 30px 15px 100px;">
+            <h4 style="margin-bottom: 10px; color: #555; font-size: 14px; text-transform: uppercase; font-weight: bold;">Active Requests</h4>
             <div id="my-requests-list">
-                <p style="color:#999; font-size:12px; text-align: center;">Loading...</p>
+                <p style="color:#999; font-size:12px; text-align: center;">Connecting...</p>
             </div>
         </div>
 
@@ -120,45 +121,48 @@
 
     <div id="view-details" style="display:none;">
         <div class="page-header">
-            <a class="action-btn" style="font-size: 20px; color:#333;" onclick="closeDetails()">←</a>
+            <a class="action-btn" style="font-size: 24px; color:#333; text-decoration: none;" onclick="closeDetails()">←</a>
             <h2 style="margin-left: -20px;">Ride Details</h2> <div></div> 
         </div>
 
         <div class="card">
-            <div class="label">Status</div>
-            <div class="val" id="disp-status" style="color: #007bff; font-weight: bold;">Loading...</div>
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="label" style="margin-top:0;">Status</div>
+                    <div class="val" id="disp-status" style="color: #007bff; font-weight: bold;">Loading...</div>
+                </div>
+                <div style="font-size:30px;" id="disp-icon">🚗</div>
+            </div>
             <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
             
-            <div class="label">Pickup</div>
+            <div class="label">Route</div>
             <div class="val" id="disp-pickup">...</div>
-            
-            <div class="label">Dropoff</div>
+            <div style="font-size: 12px; color: #ccc; margin-left: 2px;">⬇</div>
             <div class="val" id="disp-drop">...</div>
 
-            <div class="label">Vehicle Type</div>
+            <div class="label">Vehicle Preference</div>
             <div class="val" id="disp-vehicle">...</div>
         </div>
 
-        <div id="section-bids" style="display:none; padding: 15px;">
-            <h4 style="margin:0 0 10px 0;">Driver Offers</h4>
-            <p style="font-size:12px; color:#666;">Drivers are sending prices...</p>
+        <div id="section-bids" style="display:none; padding: 0 15px;">
+            <h4 style="margin:0 0 15px 0; font-size: 16px;">Driver Offers</h4>
             <div id="bids-list"></div>
+            <p id="no-bids-msg" style="font-size:13px; color:#666; text-align:center; padding: 20px;">Waiting for drivers to offer prices...</p>
         </div>
 
         <div id="section-confirmed" style="display:none; padding: 15px;">
             <div class="confirmed-box">
                 <span class="driver-avatar">🚖</span>
-                <h2 style="margin:0;">Driver Confirmed!</h2>
-                <p>Your ride is on the way.</p>
+                <h2 style="margin:0; font-size: 20px;">Driver Confirmed!</h2>
+                <p style="font-size: 13px; margin-bottom: 0;">Your ride is on the way.</p>
                 <hr style="border-top:1px solid #c3e6cb; margin:15px 0;">
                 <h3 id="driver-name-display" style="margin:5px 0;">Driver Name</h3>
-                <h4 id="driver-price-display" style="margin:0;">Rs. 0</h4>
+                <h4 id="driver-price-display" style="margin:0; color: #155724; font-size: 24px;">Rs. 0</h4>
             </div>
         </div>
 
         <div id="section-pending" style="display:none; padding: 15px;">
-            <p style="text-align: center; color: #666; font-size: 13px;">Waiting for drivers to accept...</p>
-            <button class="btn-delete" onclick="deleteCurrentRequest()">🗑 Delete Request</button>
+            <button class="btn-delete" onclick="deleteCurrentRequest()">🗑 Cancel Request</button>
         </div>
     </div>
 
@@ -170,6 +174,7 @@
     </div>
 
     <script src="firebase-init.js"></script>
+
     <script>
         // GLOBAL VARIABLES
         let riderUser = null;
@@ -178,16 +183,45 @@
         let currentDetailRef = null; 
         let currentDetailId = null;
 
-        // --- INIT ---
-        window.onload = function() {
-            const saved = localStorage.getItem("taxiUser");
-            if (!saved) return window.location.href = "index.html"; // Redirect to login if empty
-            
-            riderUser = JSON.parse(saved);
-            if(riderUser.phone) document.getElementById('inp-phone').value = riderUser.phone;
+        // ======================= 
+        // 🚀 INITIALIZATION (FIXED)
+        // =======================
+        
+        // Wait for Firebase Auth to load before doing ANYTHING with DB
+        window.addEventListener('load', function() {
+            if(!auth) { alert("Firebase not loaded!"); return; }
 
-            loadMyActiveRequests();
-        };
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // 1. User is Logged In
+                    console.log("Rider Authenticated:", user.email);
+                    
+                    // 2. Load Local Data (Name/Phone) but use Auth UID for ID
+                    const localData = localStorage.getItem("taxiUser");
+                    if (localData) {
+                        riderUser = JSON.parse(localData);
+                        riderUser.id = user.uid; // ⚠️ CRITICAL FIX: Force ID from Auth
+                    } else {
+                        // If localstorage cleared, reconstruct basic user
+                        riderUser = {
+                            id: user.uid,
+                            name: user.displayName || 'Rider',
+                            phone: user.phoneNumber || ''
+                        };
+                    }
+
+                    // 3. Update UI
+                    if(riderUser.phone) document.getElementById('inp-phone').value = riderUser.phone;
+
+                    // 4. Load Requests Safely
+                    loadMyActiveRequests();
+
+                } else {
+                    // User Not Logged In -> Go to Login
+                    window.location.href = "index.html";
+                }
+            });
+        });
 
         // ======================= HOME VIEW LOGIC =======================
 
@@ -198,20 +232,11 @@
         }
 
         function startRequestProcess() {
-            // FIX 1: Check Connection & Auth before anything else
+            // Check internet
             if (!navigator.onLine) return alert("No Internet Connection.");
             
-            const currentUser = firebase.auth().currentUser;
-            if(!currentUser) {
-                // Recover session if needed, or force login
-                if(riderUser) {
-                    console.log("Re-authenticating in background...");
-                } else {
-                    alert("Session expired. Please login again.");
-                    window.location.href = "index.html";
-                    return;
-                }
-            }
+            // Check auth again
+            if(!riderUser || !riderUser.id) return alert("User error. Please relogin.");
 
             const pickup = document.getElementById('inp-pickup').value;
             const drop = document.getElementById('inp-drop').value;
@@ -224,19 +249,19 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             document.getElementById('loading-text').innerText = "🛰️ Detecting GPS...";
 
-            // FIX 2: Better GPS Handling
+            // GPS Logic
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         if(!isProcessing) return; 
                         document.getElementById('loading-text').innerText = "✅ GPS Found! Sending...";
-                        setTimeout(() => sendToBackend(position.coords.latitude, position.coords.longitude), 500);
+                        sendToBackend(position.coords.latitude, position.coords.longitude);
                     },
                     (error) => {
                         if(!isProcessing) return;
-                        if(confirm("GPS Signal Weak. Send request without GPS?")) sendToBackend(0, 0);
+                        if(confirm("GPS Signal Failed. Send request anyway?")) sendToBackend(0, 0);
                         else cancelProcess();
-                    }, { timeout: 7000, enableHighAccuracy: true }
+                    }, { timeout: 10000, enableHighAccuracy: true }
                 );
             } else {
                 sendToBackend(0, 0);
@@ -245,8 +270,8 @@
 
         function sendToBackend(lat, lng) {
             const requestData = {
-                riderId: riderUser.id,
-                riderName: riderUser.name,
+                riderId: riderUser.id, // ✅ This is now guaranteed to exist
+                riderName: riderUser.name || 'Rider',
                 riderPhone: document.getElementById('inp-phone').value,
                 pickup: document.getElementById('inp-pickup').value,
                 drop: document.getElementById('inp-drop').value,
@@ -254,33 +279,27 @@
                 vehicleType: riderVehicle,
                 lat: lat, lng: lng,
                 status: 'pending',
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
-            // FIX 3: Timeout if database is unreachable (prevents "Stuck")
-            const timeoutCheck = setTimeout(() => {
-                if(isProcessing) {
-                    cancelProcess();
-                    alert("Network Error: Could not connect to database. Please check your internet.");
-                }
-            }, 10000);
-
-            db.ref('requests').push(requestData).then((snap) => {
-                clearTimeout(timeoutCheck);
+            // DB Push
+            db.ref('requests').push(requestData)
+            .then(() => {
                 isProcessing = false;
                 document.getElementById('loading-overlay').style.display = 'none';
                 alert("✅ Request Sent Successfully!");
                 
-                // Clear Form
+                // Reset Form
                 document.getElementById('inp-pickup').value = "";
                 document.getElementById('inp-drop').value = "";
                 document.getElementById('inp-landmark').value = "";
                 riderVehicle = null;
                 document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-            }).catch(error => {
-                clearTimeout(timeoutCheck);
+            })
+            .catch(error => {
+                isProcessing = false;
+                document.getElementById('loading-overlay').style.display = 'none';
                 alert("Error: " + error.message);
-                cancelProcess();
             });
         }
 
@@ -290,7 +309,7 @@
         }
 
         function loadMyActiveRequests() {
-            if(!riderUser) return;
+            if(!riderUser || !riderUser.id) return; // Guard clause
             
             db.ref('requests').orderByChild('riderId').equalTo(riderUser.id).on('value', (snap) => {
                 const container = document.getElementById('my-requests-list');
@@ -302,25 +321,28 @@
 
                 let reqList = [];
                 snap.forEach(child => reqList.push({ key: child.key, data: child.val() }));
-                reqList.reverse();
+                reqList.reverse(); // Show newest first
 
                 let count = 0;
                 reqList.forEach(item => {
                     const req = item.data;
-                    if(req.status === 'deleted' || req.status === 'cancelled' || req.status === 'completed') return;
+                    // Filter out completed/cancelled to keep list clean (optional)
+                    if(req.status === 'deleted' || req.status === 'cancelled') return;
 
                     count++;
                     const div = document.createElement('div');
                     div.className = 'req-card';
-                    
-                    // FIX 4: Correct Function Call (Was redirecting to missing file)
                     div.onclick = function() { openDetails(item.key); }; 
 
+                    let statusColor = '#ffc107'; // yellow
+                    if(req.status === 'confirmed') statusColor = '#28a745'; // green
+
                     div.innerHTML = `
-                        <span class="req-status">${req.status.toUpperCase()}</span>
+                        <span class="req-status" style="background:${statusColor}; color:${req.status === 'confirmed'?'white':'black'}">${req.status.toUpperCase()}</span>
                         <span class="req-arrow">❯</span>
-                        <strong>${req.pickup}</strong> to <strong>${req.drop}</strong><br>
-                        <small style="color:#666;">Vehicle: ${req.vehicleType}</small>
+                        <strong style="font-size:15px; display:block; margin-bottom:2px;">${req.drop}</strong>
+                        <small style="color:#666;">From: ${req.pickup}</small><br>
+                        <small style="color:#999; font-size:11px;">${req.vehicleType.toUpperCase()}</small>
                     `;
                     container.appendChild(div);
                 });
@@ -340,19 +362,19 @@
             currentDetailRef = db.ref('requests/' + reqId);
             currentDetailRef.on('value', (snapshot) => {
                 if (!snapshot.exists()) {
-                    alert("This request was deleted.");
+                    alert("This request no longer exists.");
                     closeDetails();
                     return;
                 }
                 const data = snapshot.val();
                 
-                // Update UI
+                // UI Data
                 document.getElementById('disp-status').innerText = data.status.toUpperCase();
                 document.getElementById('disp-pickup').innerText = data.pickup;
                 document.getElementById('disp-drop').innerText = data.drop;
                 document.getElementById('disp-vehicle').innerText = data.vehicleType;
 
-                // Handle States
+                // Handle Logic
                 if (data.status === 'confirmed') {
                     document.getElementById('section-pending').style.display = 'none';
                     document.getElementById('section-bids').style.display = 'none';
@@ -361,16 +383,19 @@
                     document.getElementById('driver-name-display').innerText = data.selectedDriverName || "Unknown Driver";
                     document.getElementById('driver-price-display').innerText = "Rs. " + data.agreedPrice;
                 } 
-                else if (data.status === 'pending' && data.bids) {
-                    document.getElementById('section-pending').style.display = 'none';
-                    document.getElementById('section-confirmed').style.display = 'none';
-                    document.getElementById('section-bids').style.display = 'block';
-                    renderBids(data.bids);
-                } 
                 else {
-                    document.getElementById('section-pending').style.display = 'block';
-                    document.getElementById('section-bids').style.display = 'none';
+                    // Pending state
                     document.getElementById('section-confirmed').style.display = 'none';
+                    document.getElementById('section-pending').style.display = 'block';
+                    document.getElementById('section-bids').style.display = 'block';
+                    
+                    if (data.bids) {
+                        document.getElementById('no-bids-msg').style.display = 'none';
+                        renderBids(data.bids);
+                    } else {
+                        document.getElementById('bids-list').innerHTML = '';
+                        document.getElementById('no-bids-msg').style.display = 'block';
+                    }
                 }
             });
         }
@@ -378,7 +403,6 @@
         function closeDetails() {
             if(currentDetailRef) currentDetailRef.off();
             currentDetailId = null;
-
             document.getElementById('view-details').style.display = 'none';
             document.getElementById('view-home').style.display = 'block';
         }
@@ -393,12 +417,15 @@
                 div.className = 'bid-card';
                 div.innerHTML = `
                     <div class="bid-info">
-                        <h4 style="margin:0;">${bid.driverName}</h4>
-                        <p style="margin:2px 0 0 0; color:#666; font-size:12px;">${bid.vehicleModel} • ${bid.plateNumber}</p>
+                        <h4 style="margin:0; font-size:15px;">${bid.driverName}</h4>
+                        <div style="font-size:12px; color:#666; margin-top:3px;">
+                            ${bid.vehicleModel || 'Vehicle'} <br>
+                            <span style="background:#eee; padding:2px 5px; border-radius:4px;">${bid.plateNumber || '***'}</span>
+                        </div>
                     </div>
                     <div style="text-align:right;">
                         <div class="bid-price">Rs. ${bid.price}</div>
-                        <button class="btn-confirm" onclick="confirmDriver('${key}', '${bid.driverName}', ${bid.price})">Accept</button>
+                        <button class="btn-confirm" onclick="confirmDriver('${key}', '${bid.driverName}', ${bid.price})">Accept Offer</button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -406,16 +433,16 @@
         }
 
         function deleteCurrentRequest() {
-            if(confirm("Are you sure you want to cancel this request?")) {
-                db.ref('requests/' + currentDetailId).remove().then(() => {
-                    alert("Request Cancelled.");
+            if(confirm("Cancel this request?")) {
+                db.ref('requests/' + currentDetailId).update({ status: 'cancelled' })
+                .then(() => {
                     closeDetails();
                 });
             }
         }
 
         function confirmDriver(driverId, driverName, price) {
-            if(confirm("Accept ride with " + driverName + " for Rs. " + price + "?")) {
+            if(confirm(`Accept ride with ${driverName} for Rs. ${price}?`)) {
                 db.ref('requests/' + currentDetailId).update({
                     status: 'confirmed',
                     selectedDriverId: driverId,
@@ -426,9 +453,10 @@
         }
 
         function logout() {
-            firebase.auth().signOut();
-            localStorage.removeItem("taxiUser");
-            window.location.href = "index.html";
+            auth.signOut().then(() => {
+                localStorage.removeItem("taxiUser");
+                window.location.href = "index.html";
+            });
         }
     </script>
 </body>
