@@ -3,7 +3,6 @@
 <head>
     <title>Super Admin - RideLink GEM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -11,8 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .login-wrapper { display: flex; align-items: center; justify-content: center; height: 100vh; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
         .admin-header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
         .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; }
         .badge-pending { background-color: #f59e0b; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
@@ -25,55 +23,41 @@
     </style>
 </head>
 <body>
-
-    <div id="admin-login" class="login-wrapper">
-        <div class="card p-5 text-center" style="width: 100%; max-width: 400px;">
-            <h3 class="mb-2">💎 RideLink GEM</h3>
-            <p class="text-muted mb-4">Super Admin Access</p>
-            <button class="btn btn-dark btn-block btn-lg" onclick="adminLogin()">Sign in with Google</button>
-            <p id="error-msg" class="text-danger mt-3 small font-weight-bold"></p>
+    <div id="admin-login" class="container text-center" style="margin-top: 100px;">
+        <div class="card p-5 mx-auto" style="max-width: 400px;">
+            <h3>💎 RideLink GEM</h3>
+            <p>Admin Panel</p>
+            <button class="btn btn-dark btn-block" onclick="adminLogin()">Sign in with Google</button>
+            <p id="error-msg" class="text-danger mt-3"></p>
         </div>
     </div>
 
     <div id="admin-dashboard" style="display: none;">
         <div class="admin-header">
-            <h5 style="margin:0;">💎 RideLink GEM</h5>
-            <div>
-                <span id="admin-email-display" class="mr-3 small text-light"></span>
-                <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
-            </div>
+            <h5 style="margin:0;">💎 Control Center</h5>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
         </div>
 
         <div class="container mt-4">
             <div class="row">
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Active Drivers</h6><div class="stat-value" id="total-drivers">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Active Riders</h6><div class="stat-value" id="total-riders">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending Review</h6><div class="stat-value" id="pending-count">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">System Float</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
-            </div>
-            
-            <div class="text-right mb-3">
-                 <button class="btn btn-outline-danger btn-sm" onclick="deleteAllUsers()">⚠️ Reset Database</button>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Drivers</h6><div class="stat-value" id="total-drivers">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Riders</h6><div class="stat-value" id="total-riders">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending</h6><div class="stat-value" id="pending-count">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">Wallet</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
             </div>
 
             <div class="card">
                 <div class="card-header bg-white pb-0">
                     <ul class="nav nav-tabs border-0">
-                        <li class="nav-item"><a class="nav-link active" onclick="switchTab('drivers')">🚖 Drivers</a></li>
-                        <li class="nav-item"><a class="nav-link" onclick="switchTab('riders')">🚶‍♂️ Riders</a></li>
+                        <li class="nav-item"><a class="nav-link active" onclick="switchTab('drivers', this)">🚖 Drivers</a></li>
+                        <li class="nav-item"><a class="nav-link" onclick="switchTab('riders', this)">🚶‍♂️ Riders</a></li>
                     </ul>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="bg-light">
-                                <tr>
-                                    <th class="pl-4">User</th>
-                                    <th>Details</th>
-                                    <th>Wallet</th>
-                                    <th>Status</th>
-                                    <th class="text-right pr-4">Actions</th>
-                                </tr>
+                                <tr><th class="pl-4">User</th><th>Details</th><th>Wallet</th><th>Status</th><th class="text-right pr-4">Actions</th></tr>
                             </thead>
                             <tbody id="table-body"></tbody>
                         </table>
@@ -84,64 +68,40 @@
     </div>
 
     <script src="firebase-init.js"></script>
-
     <script>
-        console.log("Admin Panel Loaded: v4.0");
-
-        // 🛑 CONFIG: ADMIN EMAILS
-        const ADMIN_EMAILS = [
-            "rcdotopi@gmail.com"
-        ];
-
+        const ADMIN_EMAILS = ["rcdotopi@gmail.com"]; 
         let currentTab = 'drivers'; 
         let allUsers = {}; 
 
-        // 1. STARTUP
-        // We wait for window to load to ensure firebase-init.js has run
-        window.addEventListener('load', function() {
-            
-            // Check if DB exists (it comes from firebase-init.js)
-            if (typeof db === 'undefined' || typeof auth === 'undefined') {
-                document.getElementById('error-msg').innerText = "Error: firebase-init.js not loaded or variables missing.";
-                return;
-            }
-
-            // Start Listening for Login
-            auth.onAuthStateChanged((user) => {
-                if (user && ADMIN_EMAILS.includes(user.email)) {
+        window.onload = function() {
+            if(!auth) return;
+            auth.onAuthStateChanged(user => {
+                if(user && ADMIN_EMAILS.includes(user.email)) {
                     document.getElementById('admin-login').style.display = 'none';
                     document.getElementById('admin-dashboard').style.display = 'block';
-                    document.getElementById('admin-email-display').innerText = user.email;
                     loadUsers();
                 } else {
-                    document.getElementById('admin-login').style.display = 'flex';
+                    document.getElementById('admin-login').style.display = 'block';
                     document.getElementById('admin-dashboard').style.display = 'none';
-                    if(user) document.getElementById('error-msg').innerText = "🚫 Not an Admin: " + user.email;
+                    if(user) document.getElementById('error-msg').innerText = "Access Denied";
                 }
             });
-        });
-
-        // 2. BUTTON FUNCTIONS (Global)
-        window.adminLogin = function() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(e => alert(e.message));
         }
 
-        window.logout = function() {
-            auth.signOut().then(() => location.reload());
-        }
+        function adminLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        function logout() { auth.signOut().then(() => location.reload()); }
 
-        window.switchTab = function(tab) {
+        // FIX: Switch Tab using explicit element reference
+        function switchTab(tab, element) {
             currentTab = tab;
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
+            element.classList.add('active');
             renderTable();
         }
 
-        // 3. LOAD DATA
         function loadUsers() {
-            db.ref('users').on('value', (snapshot) => {
-                allUsers = snapshot.val() || {};
+            db.ref('users').on('value', snap => {
+                allUsers = snap.val() || {};
                 renderTable();
                 updateStats();
             });
@@ -156,7 +116,6 @@
                 const user = allUsers[key];
                 const uid = key;
                 let showRow = false;
-
                 if (currentTab === 'drivers' && (user.driverStatus || user.role === 'driver')) showRow = true;
                 if (currentTab === 'riders' && (user.riderStatus || user.role === 'rider')) showRow = true;
                 if (!showRow) return;
@@ -164,17 +123,18 @@
                 const status = currentTab === 'drivers' ? (user.driverStatus || 'pending') : (user.riderStatus || 'pending');
                 let badgeClass = status === 'active' ? 'badge-active' : (status === 'blocked' ? 'badge-blocked' : 'badge-pending');
                 
+                // FIX: Using correct field names (vehiclePlate instead of vehicleReg)
                 let details = currentTab === 'drivers' 
-                    ? `<small>Parent: ${user.parentName || '-'}<br>CNIC: ${user.cnic || '-'}<br>Veh: ${user.vehicleType || '-'} (${user.vehicleReg || ''})</small>`
+                    ? `<small>Parent: ${user.parentName || '-'}<br>CNIC: ${user.cnic || '-'}<br>Veh: ${user.vehicleType || '-'} (${user.vehiclePlate || 'No Plate'})</small>`
                     : `<small>Phone: ${user.phone || '-'}</small>`;
 
-                let btns = '';
+                let btns = `<button class="btn btn-light border btn-action" onclick="editWallet('${uid}', ${user.wallet || 0})">💰</button>
+                            <button class="btn btn-light border btn-action text-danger" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
+                            <button class="btn btn-light border btn-action" onclick="deleteUser('${uid}')">🗑</button>`;
+                
                 if(status === 'pending') {
-                    btns += `<button class="btn btn-success btn-action mb-1" style="width:100%" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve</button><br>`;
+                    btns = `<button class="btn btn-success btn-action mb-1" style="width:100%" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve</button><br>` + btns;
                 }
-                btns += `<button class="btn btn-light border btn-action" onclick="editWallet('${uid}', ${user.wallet || 0})">💰</button>
-                         <button class="btn btn-light border btn-action text-danger" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
-                         <button class="btn btn-light border btn-action" onclick="deleteUser('${uid}')">🗑</button>`;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -184,7 +144,7 @@
                     <td><span class="${badgeClass}">${status.toUpperCase()}</span></td>
                     <td class="text-right pr-4">${btns}</td>
                 `;
-                if(status === 'pending') tbody.prepend(tr); else tbody.append(tr);
+                tbody.append(tr);
             });
         }
 
@@ -202,41 +162,28 @@
             document.getElementById('total-wallet').innerText = "₹ " + wallet.toLocaleString();
         }
 
-        // 4. ACTIONS
         window.approveUser = function(uid, type) {
             const bonus = type === 'drivers' ? 1000 : 500;
             if(confirm(`Approve and add ₹${bonus}?`)) {
-                let updates = { wallet: bonus }; // Default overwrites if weird structure, but better to fetch
-                db.ref('users/'+uid).once('value', s => {
-                    const current = s.val().wallet || 0;
-                    const u = {};
-                    if(type === 'drivers') u.driverStatus = 'active'; else u.riderStatus = 'active';
-                    u.wallet = current + bonus;
-                    db.ref('users/'+uid).update(u);
+                db.ref(`users/${uid}`).update({
+                    [type === 'drivers' ? 'driverStatus' : 'riderStatus']: 'active',
+                    wallet: firebase.database.ServerValue.increment(bonus)
                 });
             }
-        }
-        
+        };
+
         window.editWallet = function(uid, cur) {
-            let val = prompt(`Current: ₹${cur}\nPenalty (Rider): 250\nPenalty (Driver): -500`, cur);
-            if(val) db.ref('users/'+uid).update({wallet: parseInt(val)});
-        }
+            let val = prompt(`Current: ₹${cur}`, cur);
+            if(val) db.ref(`users/${uid}`).update({wallet: parseInt(val)});
+        };
 
         window.blockUser = function(uid, type) {
-            if(confirm("Block user?")) {
-                let u = {};
-                if(type === 'drivers') u.driverStatus = 'blocked'; else u.riderStatus = 'blocked';
-                db.ref('users/'+uid).update(u);
-            }
-        }
+            if(confirm("Block user?")) db.ref(`users/${uid}`).update({[type === 'drivers' ? 'driverStatus' : 'riderStatus']: 'blocked'});
+        };
 
         window.deleteUser = function(uid) {
-            if(confirm("Delete user permanent?")) db.ref('users/'+uid).remove();
-        }
-
-        window.deleteAllUsers = function() {
-            if(prompt("Type DELETE to wipe DB:") === 'DELETE') db.ref('users').remove();
-        }
+            if(confirm("Delete?")) db.ref(`users/${uid}`).remove();
+        };
     </script>
 </body>
 </html>
