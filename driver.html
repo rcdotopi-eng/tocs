@@ -1,50 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>RideLink - Driver</title>
+    <title>RideLink GEM - Driver Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#28a745">
-    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#1e293b">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; color: #333; }
+        
+        .container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
+        
+        .card { 
+            background: white; width: 100%; max-width: 400px; 
+            padding: 30px; border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; 
+            margin-bottom: 20px;
+        }
+
+        h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        
+        /* Inputs */
+        .input-group { margin-bottom: 15px; text-align: left; width: 100%; }
+        .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
+        .input-group input, .input-group select { 
+            width: 100%; padding: 12px; border: 1px solid #e2e8f0; 
+            border-radius: 8px; font-size: 16px; background: #f8fafc; 
+            box-sizing: border-box;
+        }
+        .input-group input:focus, .input-group select:focus { border-color: #10b981; outline: none; background: #fff; }
+
+        /* Buttons */
+        .btn-google { 
+            background: white; color: #333; border: 1px solid #cbd5e1; 
+            width: 100%; padding: 12px; border-radius: 10px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.2s;
+        }
+        .btn-google:active { background: #f1f5f9; transform: scale(0.98); }
+
+        .btn-green { 
+            background: #10b981; color: white; border: none; 
+            width: 100%; padding: 14px; border-radius: 10px; 
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+            transition: 0.2s;
+        }
+        .btn-green:active { transform: scale(0.98); }
+
+        .status-box { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 20px 0; text-align: left; }
+    </style>
 </head>
 <body>
 
-    <div class="container" style="justify-content: center; text-align: center;">
+    <div class="container">
         
-        <div style="font-size: 60px; margin-bottom: 10px;">🚖</div>
-        <h1>Driver App</h1>
+        <div style="font-size: 50px; margin-bottom: 10px;">🚖</div>
+        <h1>RideLink Partner</h1>
+        <p style="color:#64748b; margin-bottom: 30px;">Drive & Earn on your own schedule</p>
 
         <div id="view-login" class="card">
-            <h3>Partner Login</h3>
-            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                Earn money by driving.
+            <h3 style="margin-top:0;">Login</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">
+                Sign in to access your dashboard or register as a new driver.
             </p>
 
-            <button class="btn-primary" onclick="loginWithGoogle()" style="background: white; color: #444; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <button class="btn-google" onclick="loginWithGoogle()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
                 Continue with Google
             </button>
-            <p id="status-text" style="margin-top: 15px; font-size: 12px; color: #999;"></p>
+            <p id="status-text" style="margin-top: 20px; font-size: 13px; color: #94a3b8; font-weight: 500;"></p>
         </div>
 
-        <div id="view-register" class="card" style="display: none; text-align: left;">
-            <h3 style="margin-top:0; color: #28a745;">Driver Registration</h3>
-            <p style="font-size: 12px; color: #666;">Fill details to get approved.</p>
+        <div id="view-register" class="card" style="display: none;">
+            <h3 style="margin-top:0; color: #10b981;">Driver Registration</h3>
+            <p style="font-size: 13px; color: #64748b;">Complete your profile to get approved.</p>
+            <hr>
 
             <div class="input-group"><label>Full Name</label><input type="text" id="reg-name"></div>
-            <div class="input-group"><label>Parent Name</label><input type="text" id="reg-parent"></div>
-            <div class="input-group"><label>Phone</label><input type="tel" id="reg-phone" oninput="formatPhone(this)"></div>
-            <div class="input-group"><label>CNIC</label><input type="tel" id="reg-cnic" maxlength="15"></div>
-            <div class="input-group"><label>City/Address</label><input type="text" id="reg-address"></div>
+            <div class="input-group"><label>Parent/Guardian Name</label><input type="text" id="reg-parent"></div>
+            <div class="input-group"><label>Phone Number</label><input type="tel" id="reg-phone" oninput="formatPhone(this)" placeholder="03xx-xxxxxxx"></div>
+            <div class="input-group"><label>CNIC Number</label><input type="tel" id="reg-cnic" maxlength="15"></div>
+            <div class="input-group"><label>City / Area</label><input type="text" id="reg-address"></div>
 
-            <hr style="margin: 15px 0; border-top: 1px dashed #ddd;">
+            <hr style="margin: 20px 0; border-top: 1px dashed #e2e8f0;">
 
             <div class="input-group">
                 <label>Vehicle Type</label>
                 <select id="reg-vehicle-type">
+                    <option value="">Select Type...</option>
                     <option value="bike">Bike 🏍️</option>
                     <option value="rickshaw">Rickshaw 🛺</option>
                     <option value="car">Car 🚗</option>
@@ -54,33 +103,31 @@
                     <option value="luxury">Luxury Car 🚘</option>
                 </select>
             </div>
-            <div class="input-group"><label>Plate Number</label><input type="text" id="reg-plate"></div>
+            <div class="input-group"><label>Vehicle Plate Number</label><input type="text" id="reg-plate" placeholder="ABC-123"></div>
             <div class="input-group"><label>Vehicle Color</label><input type="text" id="reg-color"></div>
 
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin: 20px 0;">
-                <h4 style="margin:0 0 5px 0; color: #856404;">⚠️ Joining Fee</h4>
-                <p style="font-size: 13px; margin: 0; color: #856404;">
-                    Pay <strong>Rs. 1000</strong> to activate account. <br>(Includes Rs. 1000 Wallet Bonus)
-                </p>
-                <h2 style="text-align: center; margin: 10px 0; color: #333;">0314-6415764</h2>
+            <div class="status-box">
+                <strong>🎁 Welcome Bonus:</strong><br>
+                Your wallet will be credited with <strong>Rs. 1000</strong> upon registration submission.
+                <br><br>
+                <strong>📞 Support:</strong> 0314-6415764
             </div>
 
-            <button class="btn-green" onclick="submitRegistration()">
-                Submit Application
-            </button>
+            <button class="btn-green" onclick="submitRegistration()">Submit Application</button>
         </div>
 
-        <div id="view-pending" class="card" style="display: none;">
-            <div style="font-size: 50px;">⏳</div>
-            <h3 style="color: #e67e22;">Verification Pending</h3>
-            <p style="color: #666; font-size: 14px;">
-                We are checking your documents.<br>
-                Usually takes 2-4 hours.
+        <div id="view-pending" class="card" style="display: none; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 15px;">⏳</div>
+            <h3 style="color: #d97706;">Verification Pending</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+                Your documents have been submitted.<br>
+                Admin verification usually takes <strong>2-4 hours</strong>.
             </p>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 20px;">
-                <strong>Admin WhatsApp:</strong><br>0314-6415764
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #e2e8f0;">
+                <small style="color:#64748b; text-transform: uppercase; font-weight: bold;">Admin Contact</small><br>
+                <strong style="color: #1e293b; font-size: 16px;">0314-6415764</strong>
             </div>
-            <button onclick="location.reload()" style="margin-top: 20px; background: none; border: 1px solid #ddd; padding: 10px; width: 100%;">
+            <button onclick="location.reload()" class="btn-google" style="margin-top: 20px; justify-content: center;">
                 Check Status Again
             </button>
         </div>
@@ -92,47 +139,56 @@
         let googleUser = null;
         let existingData = null;
 
-        // 1. LOGIN
+        // 1. LOGIN FLOW
         function loginWithGoogle() {
-            const btn = document.querySelector('.btn-primary');
+            const btn = document.querySelector('.btn-google');
             const txt = document.getElementById('status-text');
-            btn.disabled = true; btn.style.opacity = "0.5"; txt.innerText = "Connecting...";
+            
+            btn.style.opacity = "0.5"; 
+            btn.style.pointerEvents = "none";
+            txt.innerText = "Connecting to Google...";
 
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
 
-            firebase.auth().signInWithPopup(provider).then((result) => {
-                googleUser = result.user;
-                checkDatabase(googleUser.uid);
-            }).catch((error) => {
-                alert(error.message);
-                btn.disabled = false; btn.style.opacity = "1";
-            });
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    googleUser = result.user;
+                    txt.innerText = "Checking Database...";
+                    checkDatabase(googleUser.uid);
+                })
+                .catch((error) => {
+                    alert("Login Failed: " + error.message);
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+                    txt.innerText = "";
+                });
         }
 
-        // 2. CHECK DATABASE
+        // 2. CHECK USER STATUS
         function checkDatabase(uid) {
             db.ref('users/' + uid).once('value').then((snapshot) => {
                 document.getElementById('view-login').style.display = 'none';
 
                 if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    existingData = data;
-                    localStorage.setItem("taxiUser", JSON.stringify(data));
+                    existingData = snapshot.val();
+                    // SAVE ID to local storage explicitly for app usage
+                    existingData.id = uid; 
+                    localStorage.setItem("driverUser", JSON.stringify(existingData));
 
-                    // CHECK SPECIFICALLY FOR DRIVER STATUS
-                    if (data.driverStatus === 'active') {
-                        // Driver is Approved
+                    // ROUTING LOGIC
+                    if (existingData.driverStatus === 'active') {
+                        // APPROVED -> Go to App
                         window.location.href = "driver_app.html";
-                    } else if (data.driverStatus === 'pending') {
-                        // Driver is Pending
+                    } else if (existingData.driverStatus === 'pending') {
+                        // PENDING -> Show Wait Screen
                         document.getElementById('view-pending').style.display = 'block';
                     } else {
-                        // User exists (likely a Rider) but NOT a Driver -> Upgrade them
+                        // BLOCKED or Rider trying to become Driver -> Show Form
                         showRegistration(true);
                     }
                 } else {
-                    // New User -> Register
+                    // NEW USER -> Show Form
                     showRegistration(false);
                 }
             });
@@ -140,45 +196,66 @@
 
         function showRegistration(isUpgrade) {
             document.getElementById('view-register').style.display = 'block';
-            document.getElementById('reg-name').value = googleUser.displayName;
+            document.getElementById('reg-name').value = googleUser.displayName || "";
             
-            // If upgrading, pre-fill phone
-            if(isUpgrade && existingData.phone) {
+            // If they were a rider, pre-fill phone
+            if(isUpgrade && existingData && existingData.phone) {
                 document.getElementById('reg-phone').value = existingData.phone;
             }
         }
 
-        // 3. SUBMIT REGISTRATION
+        // 3. SUBMIT FORM
         function submitRegistration() {
+            const name = document.getElementById('reg-name').value;
+            const parent = document.getElementById('reg-parent').value;
+            const phone = document.getElementById('reg-phone').value;
+            const cnic = document.getElementById('reg-cnic').value;
+            const address = document.getElementById('reg-address').value;
+            const vType = document.getElementById('reg-vehicle-type').value;
+            const vPlate = document.getElementById('reg-plate').value;
+            const vColor = document.getElementById('reg-color').value;
+
+            if(!name || !phone || !cnic || !vType || !vPlate) {
+                return alert("Please fill all required fields.");
+            }
+
+            // Wallet Logic: Add 1000 if new driver
+            let currentWallet = (existingData && existingData.wallet) ? parseInt(existingData.wallet) : 0;
+            // Only add bonus if they aren't already a driver (prevent double bonus on profile edit)
+            if(!existingData || !existingData.driverStatus) {
+                currentWallet += 1000;
+            }
+
             const updates = {
-                name: document.getElementById('reg-name').value,
-                parentName: document.getElementById('reg-parent').value,
-                phone: document.getElementById('reg-phone').value,
-                cnic: document.getElementById('reg-cnic').value,
-                address: document.getElementById('reg-address').value,
-                vehicleType: document.getElementById('reg-vehicle-type').value,
-                vehiclePlate: document.getElementById('reg-plate').value,
-                vehicleColor: document.getElementById('reg-color').value,
+                id: googleUser.uid, // Ensuring ID is saved in DB
+                name: name,
+                parentName: parent,
+                phone: phone,
+                cnic: cnic,
+                address: address,
+                vehicleType: vType,
+                vehiclePlate: vPlate,
+                vehicleColor: vColor,
                 email: googleUser.email,
-                driverStatus: 'pending' // Only sets Driver status
+                driverStatus: 'pending', // Send to Pending
+                wallet: currentWallet,
+                role: 'driver', // Mark as driver
+                updatedAt: Date.now()
             };
 
-            if(!updates.name || !updates.phone || !updates.vehiclePlate) return alert("Please fill all fields.");
-
-            // Add Wallet Bonus Logic:
-            // If they already have a wallet (e.g. from Rider app), ADD 1000. 
-            // If new, start with 1000.
-            let currentWallet = existingData && existingData.wallet ? parseInt(existingData.wallet) : 0;
-            updates.wallet = currentWallet + 1000;
-            
             if(!existingData) updates.joined = Date.now();
 
             db.ref('users/' + googleUser.uid).update(updates).then(() => {
+                // Update Local Storage
                 if(existingData) Object.assign(existingData, updates);
-                localStorage.setItem("taxiUser", JSON.stringify(existingData || updates));
+                else existingData = updates;
                 
+                localStorage.setItem("driverUser", JSON.stringify(existingData));
+                
+                // Show Pending Screen
                 document.getElementById('view-register').style.display = 'none';
                 document.getElementById('view-pending').style.display = 'block';
+                window.scrollTo(0,0);
             });
         }
 
