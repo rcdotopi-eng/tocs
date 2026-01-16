@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Super Admin - RideLink</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        body { background-color: #f4f6f9; }
+        .admin-header { background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 10px; }
+        .badge-pending { background-color: #ffc107; color: #000; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .badge-active { background-color: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .btn-action { font-size: 12px; padding: 4px 8px; margin: 2px; }
+        
+        /* Tabs */
+        .nav-tabs .nav-link { color: #495057; font-weight: 600; }
+        .nav-tabs .nav-link.active { color: #007bff; border-top: 3px solid #007bff; }
+        
+        .danger-zone { border: 1px solid #ffcccc; background: #fff5f5; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="admin-login" class="container text-center" style="margin-top: 100px; display: none;">
+        <h3>🔒 Admin Access Only</h3>
+        <p>Please sign in with your authorized admin email.</p>
+        <button class="btn btn-dark btn-lg" onclick="adminLogin()">
+            Sign in with Google
+        </button>
+        <p id="error-msg" class="text-danger mt-3"></p>
+    </div>
+
+    <div id="admin-dashboard" style="display: none;">
+        
+        <div class="admin-header">
+            <h4 style="margin:0;">🚖 RideLink Super Admin</h4>
+            <div>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="container mt-4">
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card p-3 text-center">
+                        <h6 class="text-muted">Total Drivers</h6>
+                        <h2 id="total-drivers">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 text-center">
+                        <h6 class="text-muted">Total Passengers</h6>
+                        <h2 id="total-riders">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 text-center">
+                        <h6 class="text-warning">Pending Approvals</h6>
+                        <h2 id="pending-count">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 text-center">
+                        <h6 class="text-success">System Wallet</h6>
+                        <h2 id="total-wallet">Rs. 0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="danger-zone d-flex justify-content-between align-items-center">
+                <span class="text-danger"><strong>⚠️ Danger Zone:</strong> Irreversible Actions</span>
+                <button class="btn btn-danger btn-sm" onclick="deleteAllUsers()">🗑 DELETE ALL USERS</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="adminTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" onclick="switchTab('drivers')">Drivers 🚖</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" onclick="switchTab('riders')">Passengers 👤</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>User Info</th>
+                                    <th>Details</th>
+                                    <th>Wallet</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="firebase-init.js"></script>
+
+    <script>
+        // ==========================================
+        // 🛑 CONFIG: YOUR ADMIN EMAILS
+        // ==========================================
+        const ADMIN_EMAILS = [
+            "rcdotopi@gmail.com",
+            // Add more emails here if needed
+        ];
+
+        let currentTab = 'drivers'; // 'drivers' or 'riders'
+        let allUsers = {}; // Store raw data
+
+        // 1. AUTH CHECK
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user && ADMIN_EMAILS.includes(user.email)) {
+                document.getElementById('admin-login').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'block';
+                loadUsers();
+            } else {
+                document.getElementById('admin-login').style.display = 'block';
+                document.getElementById('admin-dashboard').style.display = 'none';
+                if(user) {
+                    document.getElementById('error-msg').innerText = "Access Denied.";
+                    firebase.auth().signOut();
+                }
+            }
+        });
+
+        function adminLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).catch(e => alert(e.message));
+        }
+
+        function logout() {
+            firebase.auth().signOut().then(() => location.reload());
+        }
+
+        // 2. SWITCH TABS
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            // Update UI
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTable();
+        };
+
+        // 3. LOAD DATA
+        function loadUsers() {
+            db.ref('users').on('value', (snapshot) => {
+                allUsers = snapshot.val() || {};
+                renderTable();
+                updateStats();
+            });
+        }
+
+        // 4. RENDER TABLE
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if(!allUsers) return;
+
+            Object.keys(allUsers).forEach(key => {
+                const user = allUsers[key];
+                const uid = key;
+                let showRow = false;
+
+                // FILTER LOGIC
+                if (currentTab === 'drivers' && (user.driverStatus || user.role === 'driver')) showRow = true;
+                if (currentTab === 'riders' && (user.riderStatus || user.role === 'rider')) showRow = true;
+
+                if (!showRow) return;
+
+                // Determine Status for this tab
+                const status = currentTab === 'drivers' ? (user.driverStatus || 'N/A') : (user.riderStatus || 'N/A');
+                
+                // Status Badge HTML
+                const badgeHtml = status === 'active' 
+                    ? `<span class="badge-active">Active</span>` 
+                    : `<span class="badge-pending">${status.toUpperCase()}</span>`;
+
+                // Details Column
+                let details = '';
+                if(currentTab === 'drivers') {
+                    details = `<small class="text-muted">
+                        Vehicle: ${user.vehicleType || '-'} (${user.vehicleColor || ''})<br>
+                        Plate: ${user.vehiclePlate || '-'}<br>
+                        CNIC: ${user.cnic || '-'}
+                    </small>`;
+                } else {
+                    details = `<small class="text-muted">Joined: ${new Date(user.joined || Date.now()).toLocaleDateString()}</small>`;
+                }
+
+                // Action Buttons
+                let btns = '';
+                
+                // APPROVE BUTTON (Only if pending)
+                if(status === 'pending') {
+                    btns += `<button class="btn btn-success btn-action" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve</button>`;
+                }
+
+                // EDIT/BLOCK BUTTONS
+                btns += `
+                    <button class="btn btn-primary btn-action" onclick="editWallet('${uid}', ${user.wallet || 0})">💰</button>
+                    <button class="btn btn-warning btn-action" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
+                    <button class="btn btn-danger btn-action" onclick="deleteUser('${uid}')">🗑</button>
+                `;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong>${user.name || 'Unknown'}</strong><br>
+                        <small>${user.phone || '-'}</small><br>
+                        <small class="text-muted" style="font-size:10px;">${user.email}</small>
+                    </td>
+                    <td>${details}</td>
+                    <td class="font-weight-bold ${user.wallet < 0 ? 'text-danger' : 'text-success'}">Rs. ${user.wallet || 0}</td>
+                    <td>${badgeHtml}</td>
+                    <td class="text-right">${btns}</td>
+                `;
+
+                // Pendings at top
+                if(status === 'pending') tbody.prepend(tr);
+                else tbody.append(tr);
+            });
+        }
+
+        // 5. UPDATE STATS
+        function updateStats() {
+            let drivers = 0, riders = 0, pending = 0, wallet = 0;
+            
+            Object.values(allUsers).forEach(u => {
+                if(u.driverStatus) drivers++;
+                if(u.riderStatus) riders++;
+                if(u.driverStatus === 'pending' || u.riderStatus === 'pending') pending++;
+                wallet += (parseInt(u.wallet) || 0);
+            });
+
+            document.getElementById('total-drivers').innerText = drivers;
+            document.getElementById('total-riders').innerText = riders;
+            document.getElementById('pending-count').innerText = pending;
+            document.getElementById('total-wallet').innerText = "Rs. " + wallet.toLocaleString();
+        }
+
+        // ============================
+        // ACTIONS
+        // ============================
+
+        // APPROVE
+        window.approveUser = function(uid, type) {
+            const amount = type === 'drivers' ? 1000 : 500; // 1000 for driver, 500 for rider
+            if(confirm(`Approve ${type.slice(0,-1)}? \n\nThis will activate them and add Rs. ${amount} to wallet.`)) {
+                
+                const updates = {};
+                if(type === 'drivers') updates.driverStatus = 'active';
+                else updates.riderStatus = 'active';
+
+                // Fetch current wallet to add safely
+                db.ref('users/' + uid + '/wallet').once('value', snap => {
+                    const current = snap.val() || 0;
+                    updates.wallet = current + amount;
+                    db.ref('users/' + uid).update(updates);
+                });
+            }
+        };
+
+        // EDIT WALLET
+        window.editWallet = function(uid, current) {
+            const val = prompt("Enter new Wallet Balance:", current);
+            if(val !== null) {
+                db.ref('users/' + uid).update({ wallet: parseInt(val) });
+            }
+        };
+
+        // BLOCK
+        window.blockUser = function(uid, type) {
+            if(confirm("Block this user?")) {
+                const updates = {};
+                if(type === 'drivers') updates.driverStatus = 'blocked';
+                else updates.riderStatus = 'blocked';
+                db.ref('users/' + uid).update(updates);
+            }
+        };
+
+        // DELETE SINGLE USER
+        window.deleteUser = function(uid) {
+            if(confirm("⚠️ PERMANENTLY DELETE this user? This cannot be undone.")) {
+                db.ref('users/' + uid).remove();
+            }
+        };
+
+        // DELETE ALL USERS (DANGEROUS)
+        window.deleteAllUsers = function() {
+            const check = prompt("⚠️ DANGER ZONE ⚠️\n\nThis will delete ALL users (Drivers & Passengers) from the database.\n\nType 'DELETE' to confirm:");
+            if(check === 'DELETE') {
+                db.ref('users').remove()
+                .then(() => alert("All users have been deleted."))
+                .catch(e => alert("Error: " + e.message));
+            } else {
+                alert("Action Cancelled.");
+            }
+        };
+
+    </script>
+</body>
+</html>
