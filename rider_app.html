@@ -1,71 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Rider App</title>
+    <title>Rider App - RideLink</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#1e293b">
     
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
         
-        /* SHARED HEADER */
+        /* HEADER */
         .page-header {
-            background: #fff; padding: 15px 20px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: #1e293b; color: white; padding: 15px 20px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 50;
+            position: sticky; top: 0; z-index: 100;
         }
-        .page-header h2 { margin: 0; font-size: 18px; color: #333; font-weight: 700; }
-        .action-btn { color: #dc3545; font-size: 13px; font-weight: bold; cursor: pointer; text-decoration: none;}
+        .page-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+        .action-btn { color: #fff; font-size: 13px; cursor: pointer; opacity: 0.8; }
 
         /* CARDS */
-        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; }
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: none; }
         
         /* INPUTS */
         .input-group { margin-bottom: 15px; width: 100%; }
-        .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; text-align: left; width: 100%; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #e1e1e1; border-radius: 8px; font-size: 16px; background: #fafafa; transition: 0.3s; }
-        .input-group input:focus { border-color: #007bff; outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+        .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; text-align: left; width: 100%; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; background: #f8fafc; transition: 0.3s; }
+        .input-group input:focus { border-color: #10b981; outline: none; background: #fff; }
 
         /* VEHICLE GRID */
-        .grid-title { margin: 0 15px 10px; font-size: 14px; font-weight: bold; color: #555; }
+        .grid-title { margin: 0 15px 10px; font-size: 14px; font-weight: bold; color: #475569; }
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
-        .vehicle-item { background: white; border: 2px solid #eee; border-radius: 12px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
-        .vehicle-item.selected { border-color: #007bff; background-color: #e3f2fd; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,123,255,0.2); }
+        .vehicle-item { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; }
+        .vehicle-item.selected { border-color: #10b981; background-color: #ecfdf5; transform: scale(1.02); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
         .v-icon { font-size: 28px; display: block; margin-bottom: 5px; }
-        .v-name { font-size: 11px; font-weight: 600; color: #444; }
+        .v-name { font-size: 11px; font-weight: 600; color: #334155; }
 
         /* REQUEST LIST ITEM */
         .req-card { 
-            background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #ffc107; 
-            margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; cursor: pointer; 
+            background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #f59e0b; 
+            margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); position: relative; cursor: pointer; 
         }
-        .req-arrow { position: absolute; right: 15px; top: 35%; color: #ccc; font-size: 20px; }
-        .req-status { float: right; font-size: 11px; font-weight: bold; background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; margin-right: 20px;}
+        .req-arrow { position: absolute; right: 15px; top: 35%; color: #cbd5e1; font-size: 20px; }
+        .req-status { float: right; font-size: 10px; font-weight: 800; background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-confirmed { background: #d1fae5; color: #059669; border-left-color: #10b981; }
 
-        /* DETAILS VIEW STYLES */
-        .label { font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold; margin-top: 10px; }
-        .val { font-size: 16px; color: #333; margin-bottom: 5px; font-weight: 500; }
-        .confirmed-box { background: #d1e7dd; border: 1px solid #badbcc; border-radius: 12px; padding: 25px; text-align: center; color: #0f5132; }
-        .driver-avatar { font-size: 40px; margin-bottom: 10px; display: block; }
+        /* DETAILS VIEW */
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
+        .val { font-size: 16px; color: #1e293b; font-weight: 600; }
+        
+        .driver-box { background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 12px; padding: 20px; text-align: center; color: #065f46; margin-top: 15px; }
         
         /* BIDS */
-        .bid-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        .bid-price { font-size: 20px; font-weight: bold; color: #28a745; }
-        .btn-confirm { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
-        .btn-delete { background: #fee2e2; color: #dc3545; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .bid-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .bid-price { font-size: 18px; font-weight: bold; color: #10b981; }
+        .btn-confirm { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; }
+        .btn-cancel { background: #fee2e2; color: #ef4444; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 20px; }
 
         /* BOTTOM BAR & OVERLAY */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; z-index: 100; }
-        .btn-primary { width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: bold; background: #007bff; border: none; color: white; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 100; }
+        .btn-primary { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; background: #1e293b; border: none; color: white; }
         
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.9); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #10b981; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -73,7 +76,7 @@
 
     <div id="view-home">
         <div class="page-header">
-            <h2>Request a Ride</h2>
+            <h2>💎 RideLink Rider</h2>
             <a class="action-btn" onclick="logout()">Logout</a>
         </div>
 
@@ -92,7 +95,7 @@
             </div>
             <div class="input-group">
                 <label>Contact Number <span style="color:red">*</span></label>
-                <input type="tel" id="inp-phone" readonly style="background-color: #eee; color: #777;">
+                <input type="tel" id="inp-phone" readonly style="background-color: #f1f5f9; color: #64748b;">
             </div>
         </div>
 
@@ -108,9 +111,9 @@
         </div>
 
         <div style="margin: 30px 15px 100px;">
-            <h4 style="margin-bottom: 10px; color: #555; font-size: 14px; text-transform: uppercase; font-weight: bold;">Active Requests</h4>
+            <h4 style="margin-bottom: 10px; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">My Active Requests</h4>
             <div id="my-requests-list">
-                <p style="color:#999; font-size:12px; text-align: center;">Connecting...</p>
+                <p style="color:#94a3b8; font-size:12px; text-align: center;">Connecting to network...</p>
             </div>
         </div>
 
@@ -121,340 +124,360 @@
 
     <div id="view-details" style="display:none;">
         <div class="page-header">
-            <a class="action-btn" style="font-size: 24px; color:#333; text-decoration: none;" onclick="closeDetails()">←</a>
-            <h2 style="margin-left: -20px;">Ride Details</h2> <div></div> 
+            <a class="action-btn" style="font-size: 20px; text-decoration: none;" onclick="closeDetails()">← Back</a>
+            <h2>Ride Details</h2> <div></div> 
         </div>
 
         <div class="card">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="label" style="margin-top:0;">Status</div>
-                    <div class="val" id="disp-status" style="color: #007bff; font-weight: bold;">Loading...</div>
+                    <div class="val" id="disp-status" style="color: #10b981;">Loading...</div>
                 </div>
                 <div style="font-size:30px;" id="disp-icon">🚗</div>
             </div>
-            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
+            <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 15px 0;">
             
-            <div class="label">Route</div>
+            <div class="label">Pickup</div>
             <div class="val" id="disp-pickup">...</div>
-            <div style="font-size: 12px; color: #ccc; margin-left: 2px;">⬇</div>
+            
+            <div style="height: 15px; border-left: 2px dashed #cbd5e1; margin-left: 8px; margin-top:5px; margin-bottom:5px;"></div>
+            
+            <div class="label">Dropoff</div>
             <div class="val" id="disp-drop">...</div>
 
-            <div class="label">Vehicle Preference</div>
+            <div class="label" style="margin-top: 15px;">Vehicle</div>
             <div class="val" id="disp-vehicle">...</div>
         </div>
 
         <div id="section-bids" style="display:none; padding: 0 15px;">
-            <h4 style="margin:0 0 15px 0; font-size: 16px;">Driver Offers</h4>
+            <h4 style="margin:0 0 15px 0; font-size: 14px; font-weight:bold; color:#475569;">Driver Offers</h4>
             <div id="bids-list"></div>
-            <p id="no-bids-msg" style="font-size:13px; color:#666; text-align:center; padding: 20px;">Waiting for drivers to offer prices...</p>
+            <p id="no-bids-msg" style="font-size:13px; color:#94a3b8; text-align:center; padding: 20px; background:white; border-radius:12px;">Waiting for drivers to offer prices...</p>
         </div>
 
         <div id="section-confirmed" style="display:none; padding: 15px;">
-            <div class="confirmed-box">
-                <span class="driver-avatar">🚖</span>
-                <h2 style="margin:0; font-size: 20px;">Driver Confirmed!</h2>
+            <div class="driver-box">
+                <span style="font-size: 40px; display:block; margin-bottom:10px;">🚖</span>
+                <h2 style="margin:0; font-size: 20px; color:#065f46;">Driver Confirmed!</h2>
                 <p style="font-size: 13px; margin-bottom: 0;">Your ride is on the way.</p>
-                <hr style="border-top:1px solid #c3e6cb; margin:15px 0;">
+                <hr style="border-top:1px solid #a7f3d0; margin:15px 0;">
                 <h3 id="driver-name-display" style="margin:5px 0;">Driver Name</h3>
-                <h4 id="driver-price-display" style="margin:0; color: #155724; font-size: 24px;">Rs. 0</h4>
+                <h4 id="driver-price-display" style="margin:0; color: #059669; font-size: 24px;">Rs. 0</h4>
             </div>
         </div>
 
         <div id="section-pending" style="display:none; padding: 15px;">
-            <button class="btn-delete" onclick="deleteCurrentRequest()">🗑 Cancel Request</button>
+            <button class="btn-cancel" onclick="deleteCurrentRequest()">Cancel Request</button>
         </div>
     </div>
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <h3>Please Wait...</h3>
-        <p id="loading-text" style="font-size: 16px; margin-top: 15px; font-weight:bold;">Initializing...</p>
-        <button onclick="cancelProcess()" style="margin-top: 25px; background: transparent; border: 1px solid white; color: white; padding: 8px 25px; border-radius: 20px; font-size: 14px;">Cancel</button>
+        <h3 style="font-size:18px;">Please Wait...</h3>
+        <p id="loading-text" style="font-size: 14px; margin-top: 10px; color: #cbd5e1;">Initializing...</p>
+        <button onclick="cancelProcess()" style="margin-top: 25px; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 25px; border-radius: 20px; font-size: 13px;">Cancel</button>
     </div>
 
     <script src="firebase-init.js"></script>
 
     <script>
-        // GLOBAL VARIABLES
-        let riderUser = null;
-        let riderVehicle = null;
+        // GLOBAL STATE
+        let currentUserData = null; // Stores {id, name, phone}
+        let selectedVehicleType = null;
         let isProcessing = false;
-        let currentDetailRef = null; 
-        let currentDetailId = null;
+        let activeRequestRef = null; 
+        let activeRequestId = null;
 
-        // ======================= 
-        // 🚀 INITIALIZATION (FIXED)
-        // =======================
-        
-        // Wait for Firebase Auth to load before doing ANYTHING with DB
-        window.addEventListener('load', function() {
-            if(!auth) { alert("Firebase not loaded!"); return; }
+        // 1. APP STARTUP
+        window.onload = function() {
+            // Check if Firebase loaded
+            if (typeof firebase === 'undefined') {
+                alert("Error: Firebase not loaded. Check firebase-init.js");
+                return;
+            }
 
-            auth.onAuthStateChanged(user => {
+            // Listen for Auth State
+            firebase.auth().onAuthStateChanged(user => {
                 if (user) {
-                    // 1. User is Logged In
-                    console.log("Rider Authenticated:", user.email);
+                    // USER LOGGED IN
+                    console.log("✅ User Logged In:", user.uid);
                     
-                    // 2. Load Local Data (Name/Phone) but use Auth UID for ID
-                    const localData = localStorage.getItem("taxiUser");
-                    if (localData) {
-                        riderUser = JSON.parse(localData);
-                        riderUser.id = user.uid; // ⚠️ CRITICAL FIX: Force ID from Auth
-                    } else {
-                        // If localstorage cleared, reconstruct basic user
-                        riderUser = {
-                            id: user.uid,
-                            name: user.displayName || 'Rider',
-                            phone: user.phoneNumber || ''
-                        };
-                    }
+                    // Construct User Object
+                    currentUserData = {
+                        id: user.uid,
+                        name: user.displayName || 'Rider',
+                        phone: user.phoneNumber || ''
+                    };
 
-                    // 3. Update UI
-                    if(riderUser.phone) document.getElementById('inp-phone').value = riderUser.phone;
+                    // Fill Phone Field
+                    document.getElementById('inp-phone').value = currentUserData.phone;
 
-                    // 4. Load Requests Safely
-                    loadMyActiveRequests();
-
+                    // Load Data
+                    loadMyRequests();
                 } else {
-                    // User Not Logged In -> Go to Login
+                    // NO USER -> REDIRECT LOGIN
+                    console.log("⛔ No User. Redirecting...");
                     window.location.href = "index.html";
                 }
             });
-        });
+        };
 
-        // ======================= HOME VIEW LOGIC =======================
-
-        function selectVehicle(id, elementId) {
-            riderVehicle = id;
+        // 2. UI FUNCTIONS
+        function selectVehicle(type, elementId) {
+            selectedVehicleType = type;
+            // Remove 'selected' class from all, add to clicked
             document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
             document.getElementById(elementId).classList.add('selected');
         }
 
-        function startRequestProcess() {
-            // Check internet
-            if (!navigator.onLine) return alert("No Internet Connection.");
-            
-            // Check auth again
-            if(!riderUser || !riderUser.id) return alert("User error. Please relogin.");
-
-            const pickup = document.getElementById('inp-pickup').value;
-            const drop = document.getElementById('inp-drop').value;
-            const phone = document.getElementById('inp-phone').value;
-            
-            if(!pickup || !drop || !phone) return alert("Please fill all fields.");
-            if(!riderVehicle) return alert("Please select a Vehicle Type.");
-
-            isProcessing = true;
+        function showLoading(msg) {
+            document.getElementById('loading-text').innerText = msg;
             document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "🛰️ Detecting GPS...";
-
-            // GPS Logic
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        if(!isProcessing) return; 
-                        document.getElementById('loading-text').innerText = "✅ GPS Found! Sending...";
-                        sendToBackend(position.coords.latitude, position.coords.longitude);
-                    },
-                    (error) => {
-                        if(!isProcessing) return;
-                        if(confirm("GPS Signal Failed. Send request anyway?")) sendToBackend(0, 0);
-                        else cancelProcess();
-                    }, { timeout: 10000, enableHighAccuracy: true }
-                );
-            } else {
-                sendToBackend(0, 0);
-            }
         }
 
-        function sendToBackend(lat, lng) {
-            const requestData = {
-                riderId: riderUser.id, // ✅ This is now guaranteed to exist
-                riderName: riderUser.name || 'Rider',
-                riderPhone: document.getElementById('inp-phone').value,
-                pickup: document.getElementById('inp-pickup').value,
-                drop: document.getElementById('inp-drop').value,
-                landmark: document.getElementById('inp-landmark').value,
-                vehicleType: riderVehicle,
-                lat: lat, lng: lng,
-                status: 'pending',
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            // DB Push
-            db.ref('requests').push(requestData)
-            .then(() => {
-                isProcessing = false;
-                document.getElementById('loading-overlay').style.display = 'none';
-                alert("✅ Request Sent Successfully!");
-                
-                // Reset Form
-                document.getElementById('inp-pickup').value = "";
-                document.getElementById('inp-drop').value = "";
-                document.getElementById('inp-landmark').value = "";
-                riderVehicle = null;
-                document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-            })
-            .catch(error => {
-                isProcessing = false;
-                document.getElementById('loading-overlay').style.display = 'none';
-                alert("Error: " + error.message);
-            });
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
         function cancelProcess() {
             isProcessing = false;
-            document.getElementById('loading-overlay').style.display = 'none';
+            hideLoading();
         }
 
-        function loadMyActiveRequests() {
-            if(!riderUser || !riderUser.id) return; // Guard clause
+        // 3. REQUEST SUBMISSION LOGIC
+        function startRequestProcess() {
+            if (!navigator.onLine) return alert("No Internet Connection.");
+            if (!currentUserData || !currentUserData.id) return alert("Please wait for login to finish.");
             
-            db.ref('requests').orderByChild('riderId').equalTo(riderUser.id).on('value', (snap) => {
-                const container = document.getElementById('my-requests-list');
-                if(!snap.exists()) {
-                    container.innerHTML = '<p style="color:#999; text-align: center; margin-top:20px;">No active requests.</p>';
+            const pickup = document.getElementById('inp-pickup').value.trim();
+            const drop = document.getElementById('inp-drop').value.trim();
+            const landmark = document.getElementById('inp-landmark').value.trim();
+
+            if (!pickup || !drop) return alert("Please enter Pickup and Drop locations.");
+            if (!selectedVehicleType) return alert("Please select a Vehicle Type.");
+
+            isProcessing = true;
+            showLoading("🛰️ Getting GPS Location...");
+
+            // Get GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        if (!isProcessing) return;
+                        submitToFirebase(pos.coords.latitude, pos.coords.longitude, pickup, drop, landmark);
+                    },
+                    (err) => {
+                        if (!isProcessing) return;
+                        // Fallback if GPS fails
+                        if(confirm("GPS failed. Send request anyway?")) {
+                            submitToFirebase(0, 0, pickup, drop, landmark);
+                        } else {
+                            cancelProcess();
+                        }
+                    },
+                    { timeout: 10000, enableHighAccuracy: true }
+                );
+            } else {
+                submitToFirebase(0, 0, pickup, drop, landmark);
+            }
+        }
+
+        function submitToFirebase(lat, lng, pickup, drop, landmark) {
+            showLoading("📤 Sending Request...");
+
+            const newReq = {
+                riderId: currentUserData.id,
+                riderName: currentUserData.name,
+                riderPhone: currentUserData.phone,
+                pickup: pickup,
+                drop: drop,
+                landmark: landmark,
+                vehicleType: selectedVehicleType,
+                lat: lat,
+                lng: lng,
+                status: 'pending',
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            firebase.database().ref('requests').push(newReq)
+                .then(() => {
+                    isProcessing = false;
+                    hideLoading();
+                    alert("✅ Request Sent!");
+                    
+                    // Clear inputs
+                    document.getElementById('inp-pickup').value = "";
+                    document.getElementById('inp-drop').value = "";
+                    document.getElementById('inp-landmark').value = "";
+                    selectedVehicleType = null;
+                    document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
+                })
+                .catch(err => {
+                    isProcessing = false;
+                    hideLoading();
+                    alert("Error: " + err.message);
+                });
+        }
+
+        // 4. LOAD ACTIVE REQUESTS
+        function loadMyRequests() {
+            if(!currentUserData) return;
+
+            const ref = firebase.database().ref('requests');
+            // Query: requests where riderId == currentUserId
+            ref.orderByChild('riderId').equalTo(currentUserData.id).on('value', snap => {
+                const list = document.getElementById('my-requests-list');
+                list.innerHTML = ""; // Clear list
+
+                if (!snap.exists()) {
+                    list.innerHTML = '<p style="color:#94a3b8; text-align: center; margin-top:20px;">No active requests.</p>';
                     return;
                 }
-                container.innerHTML = ''; 
 
-                let reqList = [];
-                snap.forEach(child => reqList.push({ key: child.key, data: child.val() }));
-                reqList.reverse(); // Show newest first
+                const requests = [];
+                snap.forEach(child => {
+                    requests.push({ key: child.key, val: child.val() });
+                });
+
+                // Show newest first
+                requests.reverse();
 
                 let count = 0;
-                reqList.forEach(item => {
-                    const req = item.data;
-                    // Filter out completed/cancelled to keep list clean (optional)
-                    if(req.status === 'deleted' || req.status === 'cancelled') return;
+                requests.forEach(item => {
+                    const r = item.val;
+                    // Skip old/cancelled stuff if you want, or show history
+                    if (r.status === 'cancelled' || r.status === 'deleted') return;
 
                     count++;
                     const div = document.createElement('div');
                     div.className = 'req-card';
-                    div.onclick = function() { openDetails(item.key); }; 
-
-                    let statusColor = '#ffc107'; // yellow
-                    if(req.status === 'confirmed') statusColor = '#28a745'; // green
+                    if (r.status === 'confirmed') div.classList.add('status-confirmed');
+                    
+                    div.onclick = () => openDetails(item.key);
 
                     div.innerHTML = `
-                        <span class="req-status" style="background:${statusColor}; color:${req.status === 'confirmed'?'white':'black'}">${req.status.toUpperCase()}</span>
+                        <span class="req-status">${r.status}</span>
                         <span class="req-arrow">❯</span>
-                        <strong style="font-size:15px; display:block; margin-bottom:2px;">${req.drop}</strong>
-                        <small style="color:#666;">From: ${req.pickup}</small><br>
-                        <small style="color:#999; font-size:11px;">${req.vehicleType.toUpperCase()}</small>
+                        <div style="font-weight:bold; color:#1e293b;">${r.drop}</div>
+                        <div style="font-size:12px; color:#64748b;">From: ${r.pickup}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${r.vehicleType.toUpperCase()}</div>
                     `;
-                    container.appendChild(div);
+                    list.appendChild(div);
                 });
 
-                if(count === 0) container.innerHTML = '<p style="color:#999; text-align: center; margin-top:20px;">No active requests.</p>';
+                if (count === 0) list.innerHTML = '<p style="color:#94a3b8; text-align: center; margin-top:20px;">No active requests.</p>';
             });
         }
 
-        // ======================= DETAILS VIEW LOGIC =======================
-
+        // 5. DETAILS & BID LOGIC
         function openDetails(reqId) {
-            currentDetailId = reqId;
+            activeRequestId = reqId;
+            
+            // Switch Views
             document.getElementById('view-home').style.display = 'none';
             document.getElementById('view-details').style.display = 'block';
-            window.scrollTo(0, 0);
+            window.scrollTo(0,0);
 
-            currentDetailRef = db.ref('requests/' + reqId);
-            currentDetailRef.on('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    alert("This request no longer exists.");
+            // Listen to this specific request
+            if(activeRequestRef) activeRequestRef.off(); // Detach old listener
+            activeRequestRef = firebase.database().ref('requests/' + reqId);
+
+            activeRequestRef.on('value', snap => {
+                if(!snap.exists()) {
+                    alert("This request was deleted.");
                     closeDetails();
                     return;
                 }
-                const data = snapshot.val();
-                
-                // UI Data
-                document.getElementById('disp-status').innerText = data.status.toUpperCase();
-                document.getElementById('disp-pickup').innerText = data.pickup;
-                document.getElementById('disp-drop').innerText = data.drop;
-                document.getElementById('disp-vehicle').innerText = data.vehicleType;
-
-                // Handle Logic
-                if (data.status === 'confirmed') {
-                    document.getElementById('section-pending').style.display = 'none';
-                    document.getElementById('section-bids').style.display = 'none';
-                    document.getElementById('section-confirmed').style.display = 'block';
-                    
-                    document.getElementById('driver-name-display').innerText = data.selectedDriverName || "Unknown Driver";
-                    document.getElementById('driver-price-display').innerText = "Rs. " + data.agreedPrice;
-                } 
-                else {
-                    // Pending state
-                    document.getElementById('section-confirmed').style.display = 'none';
-                    document.getElementById('section-pending').style.display = 'block';
-                    document.getElementById('section-bids').style.display = 'block';
-                    
-                    if (data.bids) {
-                        document.getElementById('no-bids-msg').style.display = 'none';
-                        renderBids(data.bids);
-                    } else {
-                        document.getElementById('bids-list').innerHTML = '';
-                        document.getElementById('no-bids-msg').style.display = 'block';
-                    }
-                }
+                const data = snap.val();
+                renderDetails(data, reqId);
             });
         }
 
         function closeDetails() {
-            if(currentDetailRef) currentDetailRef.off();
-            currentDetailId = null;
+            if(activeRequestRef) activeRequestRef.off();
+            activeRequestId = null;
             document.getElementById('view-details').style.display = 'none';
             document.getElementById('view-home').style.display = 'block';
         }
 
-        function renderBids(bidsObject) {
-            const list = document.getElementById('bids-list');
-            list.innerHTML = '';
-            
-            Object.keys(bidsObject).forEach(key => {
-                const bid = bidsObject[key];
-                const div = document.createElement('div');
-                div.className = 'bid-card';
-                div.innerHTML = `
-                    <div class="bid-info">
-                        <h4 style="margin:0; font-size:15px;">${bid.driverName}</h4>
-                        <div style="font-size:12px; color:#666; margin-top:3px;">
-                            ${bid.vehicleModel || 'Vehicle'} <br>
-                            <span style="background:#eee; padding:2px 5px; border-radius:4px;">${bid.plateNumber || '***'}</span>
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div class="bid-price">Rs. ${bid.price}</div>
-                        <button class="btn-confirm" onclick="confirmDriver('${key}', '${bid.driverName}', ${bid.price})">Accept Offer</button>
-                    </div>
-                `;
-                list.appendChild(div);
+        function renderDetails(data, reqId) {
+            // Basic Info
+            document.getElementById('disp-status').innerText = data.status.toUpperCase();
+            document.getElementById('disp-pickup').innerText = data.pickup;
+            document.getElementById('disp-drop').innerText = data.drop;
+            document.getElementById('disp-vehicle').innerText = data.vehicleType;
+
+            const bidsList = document.getElementById('bids-list');
+            const bidsSection = document.getElementById('section-bids');
+            const pendingSection = document.getElementById('section-pending');
+            const confirmedSection = document.getElementById('section-confirmed');
+
+            // STATE: CONFIRMED
+            if (data.status === 'confirmed') {
+                pendingSection.style.display = 'none';
+                bidsSection.style.display = 'none';
+                confirmedSection.style.display = 'block';
+                
+                document.getElementById('driver-name-display').innerText = data.selectedDriverName || "Driver";
+                document.getElementById('driver-price-display').innerText = "Rs. " + data.agreedPrice;
+            } 
+            // STATE: PENDING (Waiting for bids)
+            else {
+                confirmedSection.style.display = 'none';
+                pendingSection.style.display = 'block';
+                bidsSection.style.display = 'block';
+
+                // Render Bids
+                bidsList.innerHTML = '';
+                if (data.bids) {
+                    document.getElementById('no-bids-msg').style.display = 'none';
+                    Object.keys(data.bids).forEach(key => {
+                        const bid = data.bids[key];
+                        const div = document.createElement('div');
+                        div.className = 'bid-card';
+                        div.innerHTML = `
+                            <div>
+                                <div style="font-weight:bold; color:#334155;">${bid.driverName}</div>
+                                <div style="font-size:12px; color:#64748b;">${bid.vehicleModel} (${bid.plateNumber})</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div class="bid-price">Rs. ${bid.price}</div>
+                                <button class="btn-confirm" onclick="acceptBid('${reqId}', '${key}', '${bid.driverName}', ${bid.price})">Accept</button>
+                            </div>
+                        `;
+                        bidsList.appendChild(div);
+                    });
+                } else {
+                    document.getElementById('no-bids-msg').style.display = 'block';
+                }
+            }
+        }
+
+        function acceptBid(reqId, driverId, driverName, price) {
+            if(!confirm(`Accept ride for Rs. ${price}?`)) return;
+
+            firebase.database().ref('requests/' + reqId).update({
+                status: 'confirmed',
+                selectedDriverId: driverId,
+                selectedDriverName: driverName,
+                agreedPrice: price
             });
         }
 
         function deleteCurrentRequest() {
-            if(confirm("Cancel this request?")) {
-                db.ref('requests/' + currentDetailId).update({ status: 'cancelled' })
-                .then(() => {
-                    closeDetails();
-                });
-            }
-        }
-
-        function confirmDriver(driverId, driverName, price) {
-            if(confirm(`Accept ride with ${driverName} for Rs. ${price}?`)) {
-                db.ref('requests/' + currentDetailId).update({
-                    status: 'confirmed',
-                    selectedDriverId: driverId,
-                    selectedDriverName: driverName,
-                    agreedPrice: price
-                });
-            }
+            if(!confirm("Are you sure you want to cancel?")) return;
+            
+            // We can either remove it or set status to 'cancelled'
+            firebase.database().ref('requests/' + activeRequestId).update({
+                status: 'cancelled'
+            }).then(() => {
+                closeDetails();
+            });
         }
 
         function logout() {
-            auth.signOut().then(() => {
-                localStorage.removeItem("taxiUser");
+            firebase.auth().signOut().then(() => {
                 window.location.href = "index.html";
             });
         }
