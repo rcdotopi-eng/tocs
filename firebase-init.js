@@ -1,4 +1,4 @@
-  // firebase-init.js
+// firebase-init.js
 
 // 1. CONFIGURATION (Replace with your actual keys)
 const firebaseConfig = {
