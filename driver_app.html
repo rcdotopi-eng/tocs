@@ -74,6 +74,7 @@
         let gpsInterval = null;
 
         window.onload = function() {
+            // Safety Check for SDK
             if (typeof db === 'undefined' || typeof auth === 'undefined') {
                 db = firebase.database();
                 auth = firebase.auth();
@@ -88,6 +89,7 @@
                     } else {
                         driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
                     }
+                    
                     startGpsTracking();
                     listenForRequests();
                 } else {
@@ -109,9 +111,13 @@
                         myLng = pos.coords.longitude;
                         document.getElementById('gps-indicator').innerText = "📡 GPS: Active";
                         document.getElementById('gps-indicator').style.background = "rgba(255,255,255,0.3)";
+                        
                         db.ref('users/' + driverUser.id + '/location').update({
                             lat: myLat, lng: myLng, timestamp: Date.now()
                         });
+
+                        // FIX #1: Re-trigger listener now that we have real coordinates
+                        listenForRequests(); 
                     },
                     (err) => {
                         document.getElementById('gps-indicator').innerText = "⚠️ GPS: Weak";
@@ -133,6 +139,9 @@
         }
 
         function listenForRequests() {
+            // FIX #2: Detach old listener to prevent duplicates when re-called
+            db.ref('requests').off(); 
+
             db.ref('requests').on('value', snap => {
                 const newList = document.getElementById('new-requests-list');
                 const myList = document.getElementById('my-rides-list');
@@ -157,8 +166,8 @@
                     const r = item.v;
                     const reqId = item.k;
 
-                    // --- SECTION 3: HISTORY ---
-                    if(r.status === 'completed' && r.selectedDriverId === driverUser.id) {
+                    // FIX #3: Check uppercase 'COMPLETED' (Matches driver write)
+                    if(r.status === 'COMPLETED' && r.selectedDriverId === driverUser.id) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
                         div.style.borderLeft = "5px solid #6c757d";
@@ -167,8 +176,8 @@
                         return;
                     }
 
-                    // --- SECTION 1: MY ACTIVE RIDES ---
-                    if(r.status === 'confirmed' && r.selectedDriverId === driverUser.id) {
+                    // FIX #4: Check uppercase 'CONFIRMED' (Matches rider write)
+                    if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
                         div.style.borderLeft = "5px solid #28a745";
@@ -200,16 +209,20 @@
                         return;
                     }
 
-                    // --- SECTION 2: NEW JOBS (PENDING or OFFERS_RECEIVED) ---
+                    // --- NEW JOBS (Status: 'pending' or 'OFFERS_RECEIVED') ---
                     if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
                         if(driverUser.vehicleType && r.vehicleType && driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
+                        
+                        // Wait for GPS before filtering distance
                         if(myLat === 0 || myLng === 0) return; 
+                        
                         const dist = getDistance(myLat, myLng, r.lat, r.lng);
                         if(dist > 5.0) return; 
 
                         newCount++;
                         const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
                         const myBid = (r.bids && r.bids[driverUser.id]);
+                        
                         let bidHtml = myBid 
                             ? `<div class="alert alert-warning p-2 mt-2" style="font-size:12px;">⏳ You offered: <strong>Rs. ${myBid.price}</strong></div>`
                             : `<div class="bid-controls"><input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)"><button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button></div>`;
@@ -238,11 +251,12 @@
                 price: price, timestamp: Date.now()
             };
             db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData);
-            db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' }); // FIX A
+            db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' });
         }
 
         function completeRide(reqId) {
-            if(confirm("Ride Finished?")) db.ref(`requests/${reqId}`).update({ status: 'completed' });
+            // FIX #5: Write uppercase 'COMPLETED'
+            if(confirm("Ride Finished?")) db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
         }
 
         function reportNoShow(reqId) {
@@ -255,12 +269,12 @@
         function cancelRide(reqId) {
             const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
             if(confirm(msg)) {
-                // Deduct Balance
                 const userRef = db.ref('users/' + driverUser.id);
                 userRef.child('balance').once('value', snap => {
                     const bal = snap.val() || 0;
                     userRef.update({ balance: bal - 300, isBlocked: true });
                 });
+                // FIX #6: Write uppercase 'CANCELLED'
                 db.ref(`requests/${reqId}`).update({ status: 'CANCELLED', cancelledBy: 'DRIVER', cancellationReason: 'CONFIRMED_CANCEL_PENALTY' });
             }
         }
