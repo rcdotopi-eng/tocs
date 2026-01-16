@@ -1,8 +1,8 @@
-// ==========================================
-// 1. FIREBASE CONFIGURATION (Your Keys)
-// ==========================================
+  // firebase-init.js
+
+// 1. CONFIGURATION (Replace with your actual keys)
 const firebaseConfig = {
-  apiKey: "AIzaSyDWvW9e94dF03beWHYaCwxbJiU6G7utDuE",
+    apiKey: "AIzaSyDWvW9e94dF03beWHYaCwxbJiU6G7utDuE",
   authDomain: "texi-online.firebaseapp.com",
   databaseURL: "https://texi-online-default-rtdb.firebaseio.com",
   projectId: "texi-online",
@@ -11,48 +11,21 @@ const firebaseConfig = {
   appId: "1:1081425638649:web:5a8f99bd4158c1256fde28"
 };
 
-// ==========================================
-// 2. INITIALIZATION
-// ==========================================
+// 2. SAFETY CHECK & INITIALIZATION
+let db, auth;
 
-// Check if Firebase libraries are loaded first
 if (typeof firebase === 'undefined') {
-    console.error("❌ CRITICAL ERROR: Firebase SDK not found in HTML.");
-    alert("Error: Firebase not loaded. Please check your internet connection.");
+    console.error("❌ CRITICAL ERROR: Firebase SDK not loaded. Check your internet or script tags.");
+    alert("System Error: Could not connect to Google Services.");
 } else {
-    // Prevent "Firebase already initialized" error if script runs twice
+    // Initialize only if SDK exists
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
-        console.log("✅ Connected to texi-online");
     }
-}
-
-// ==========================================
-// 3. GLOBAL TOOLS (Available on all pages)
-// ==========================================
-
-// The Database Tool
-const db = firebase.database();
-
-// The Auth Tool (for Phone Login)
-const auth = firebase.auth();
-
-// ==========================================
-// 4. SESSION MANAGER
-// ==========================================
-// This checks "Is the user logged in?" immediately when any page loads.
-
-const savedUser = localStorage.getItem("taxiUser");
-let currentUser = null;
-
-if (savedUser) {
-    try {
-        currentUser = JSON.parse(savedUser);
-        console.log("👤 Active User:", currentUser.name);
-    } catch (e) {
-        console.error("Error parsing user data", e);
-        localStorage.removeItem("taxiUser"); // Clear corrupted data
-    }
-} else {
-    console.log("👤 No user logged in.");
+    
+    // Define global variables safely
+    db = firebase.database();
+    auth = firebase.auth();
+    
+    console.log("✅ Firebase Initialized Successfully");
 }
