@@ -16,45 +16,24 @@
         
         /* HEADER */
         .page-header { background: #1e293b; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .page-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
-        .action-btn { color: #fff; font-size: 13px; cursor: pointer; opacity: 0.8; }
-
-        /* CARDS */
-        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: none; }
         
         /* INPUTS */
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: none; }
         .input-group { margin-bottom: 15px; width: 100%; }
         .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; text-align: left; width: 100%; }
         .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; background: #fff; }
-        .input-group input:focus { border-color: #10b981; outline: none; background: #fff; }
+        .input-group input:focus { border-color: #10b981; outline: none; }
 
-        /* VEHICLE GRID (FIXED) */
+        /* VEHICLE GRID */
         .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
         .vehicle-item { 
             background: white; border: 2px solid #e2e8f0; border-radius: 12px; 
-            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; position: relative;
+            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none; 
         }
-        /* Active State */
-        .vehicle-item.selected { 
-            border-color: #10b981; background-color: #ecfdf5; 
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); transform: scale(1.02);
-        }
-        .vehicle-item.selected::after {
-            content: '✔'; position: absolute; top: 5px; right: 5px; 
-            background: #10b981; color: white; border-radius: 50%; 
-            width: 16px; height: 16px; font-size: 10px; line-height: 16px;
-        }
-        .v-icon { font-size: 32px; display: block; margin-bottom: 5px; }
-        .v-name { font-size: 12px; font-weight: 700; color: #334155; }
-
+        
         /* LIST ITEMS */
-        .req-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); position: relative; cursor: pointer; }
-        .req-status { float: right; font-size: 10px; font-weight: 800; background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
-        .status-confirmed { background: #d1fae5; color: #059669; border-left-color: #10b981; }
-
-        /* BOTTOM BAR */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 100; }
-        .btn-primary { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; background: #1e293b; border: none; color: white; }
+        .req-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); cursor: pointer; }
+        .status-confirmed { background: #d1fae5; border-left-color: #10b981; }
 
         /* OVERLAY */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.95); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
@@ -62,7 +41,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* DETAILS */
-        .driver-box { background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 12px; padding: 20px; text-align: center; color: #065f46; margin-top: 15px; }
         .bid-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
@@ -70,8 +48,8 @@
 
     <div id="view-home">
         <div class="page-header">
-            <h2>💎 RideLink Rider</h2>
-            <a class="action-btn" onclick="logout()">Logout</a>
+            <h2 style="margin:0; font-size:18px; font-weight:700;">💎 RideLink Rider</h2>
+            <span onclick="logout()" style="color:white; font-size:12px; cursor:pointer;">Logout</span>
         </div>
 
         <div class="card">
@@ -94,63 +72,84 @@
         </div>
 
         <div style="margin: 0 15px 10px; font-weight:bold; color:#475569;">Select Vehicle Type <span style="color:red">*</span></div>
+        
         <div class="vehicle-grid">
-            <div class="vehicle-item" data-type="bike" onclick="selectVehicle('bike', this)"><span class="v-icon">🏍️</span><span class="v-name">Bike</span></div>
-            <div class="vehicle-item" data-type="rickshaw" onclick="selectVehicle('rickshaw', this)"><span class="v-icon">🛺</span><span class="v-name">Rickshaw</span></div>
-            <div class="vehicle-item" data-type="car" onclick="selectVehicle('car', this)"><span class="v-icon">🚗</span><span class="v-name">Car</span></div>
-            <div class="vehicle-item" data-type="carry" onclick="selectVehicle('carry', this)"><span class="v-icon">🚐</span><span class="v-name">Carry</span></div>
-            <div class="vehicle-item" data-type="coaster" onclick="selectVehicle('coaster', this)"><span class="v-icon">🚌</span><span class="v-name">Coaster</span></div>
-            <div class="vehicle-item" data-type="loader" onclick="selectVehicle('loader', this)"><span class="v-icon">🚚</span><span class="v-name">Loader</span></div>
-            <div class="vehicle-item" data-type="luxury" onclick="selectVehicle('luxury', this)"><span class="v-icon">🚘</span><span class="v-name">Luxury</span></div>
+            <div class="vehicle-item" id="btn-bike" onclick="selectVehicle('bike')">
+                <span style="font-size:28px; display:block;">🏍️</span>
+                <span style="font-size:11px; font-weight:bold;">Bike</span>
+            </div>
+            <div class="vehicle-item" id="btn-rickshaw" onclick="selectVehicle('rickshaw')">
+                <span style="font-size:28px; display:block;">🛺</span>
+                <span style="font-size:11px; font-weight:bold;">Rickshaw</span>
+            </div>
+            <div class="vehicle-item" id="btn-car" onclick="selectVehicle('car')">
+                <span style="font-size:28px; display:block;">🚗</span>
+                <span style="font-size:11px; font-weight:bold;">Car</span>
+            </div>
+            <div class="vehicle-item" id="btn-carry" onclick="selectVehicle('carry')">
+                <span style="font-size:28px; display:block;">🚐</span>
+                <span style="font-size:11px; font-weight:bold;">Carry</span>
+            </div>
+            <div class="vehicle-item" id="btn-coaster" onclick="selectVehicle('coaster')">
+                <span style="font-size:28px; display:block;">🚌</span>
+                <span style="font-size:11px; font-weight:bold;">Coaster</span>
+            </div>
+            <div class="vehicle-item" id="btn-loader" onclick="selectVehicle('loader')">
+                <span style="font-size:28px; display:block;">🚚</span>
+                <span style="font-size:11px; font-weight:bold;">Loader</span>
+            </div>
+            <div class="vehicle-item" id="btn-luxury" onclick="selectVehicle('luxury')">
+                <span style="font-size:28px; display:block;">🚘</span>
+                <span style="font-size:11px; font-weight:bold;">Luxury</span>
+            </div>
         </div>
 
         <div style="margin: 30px 15px 100px;">
             <h4 style="margin-bottom: 10px; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: bold;">My Active Requests</h4>
             <div id="my-requests-list">
-                <p style="color:#94a3b8; font-size:12px; text-align: center;">Connecting to network...</p>
+                <p style="color:#94a3b8; font-size:12px; text-align: center;">Loading...</p>
             </div>
         </div>
 
-        <div class="bottom-bar">
-            <button class="btn-primary" onclick="startRequestProcess()">Submit Request</button>
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05);">
+            <button onclick="startRequestProcess()" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; background: #1e293b; border: none; color: white;">Submit Request</button>
         </div>
     </div>
 
     <div id="view-details" style="display:none;">
         <div class="page-header">
-            <a class="action-btn" style="font-size: 20px; text-decoration: none;" onclick="closeDetails()">← Back</a>
-            <h2>Ride Details</h2> <div></div> 
+            <span onclick="closeDetails()" style="font-size: 20px; cursor:pointer;">← Back</span>
+            <h2 style="margin:0; font-size:18px;">Details</h2> <div></div> 
         </div>
 
         <div class="card">
-            <div class="d-flex justify-content-between align-items-center">
+            <div style="display:flex; justify-content:space-between;">
                 <div>
-                    <div style="font-size: 11px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">Status</div>
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">STATUS</div>
                     <div id="disp-status" style="font-size: 16px; font-weight: 600; color: #10b981;">Loading...</div>
                 </div>
                 <div style="font-size:30px;">🚗</div>
             </div>
-            <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 15px 0;">
+            <hr style="border-top: 1px dashed #e2e8f0;">
             
-            <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">PICKUP</div>
-            <div id="disp-pickup" style="font-size: 16px; font-weight: 600; color: #1e293b;">...</div>
-            <div style="height: 10px;"></div>
-            <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">DROPOFF</div>
-            <div id="disp-drop" style="font-size: 16px; font-weight: 600; color: #1e293b;">...</div>
+            <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">ROUTE</div>
+            <div id="disp-pickup" style="font-size: 15px; font-weight: 600;">...</div>
+            <div style="color:#999; font-size:12px;">to</div>
+            <div id="disp-drop" style="font-size: 15px; font-weight: 600;">...</div>
         </div>
 
         <div id="section-bids" style="display:none; padding: 0 15px;">
             <h4 style="margin:0 0 15px 0; font-size: 14px; font-weight:bold; color:#475569;">Driver Offers</h4>
             <div id="bids-list"></div>
-            <p id="no-bids-msg" style="font-size:13px; color:#94a3b8; text-align:center; padding: 20px; background:white; border-radius:12px;">Waiting for drivers to offer prices...</p>
+            <p id="no-bids-msg" style="text-align:center; padding: 20px; color:#999; font-size:13px;">Waiting for drivers...</p>
         </div>
 
         <div id="section-confirmed" style="display:none; padding: 15px;">
-            <div class="driver-box">
-                <span style="font-size: 40px; display:block; margin-bottom:10px;">🚖</span>
-                <h2 style="margin:0; font-size: 20px;">Driver Confirmed!</h2>
+            <div style="background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 12px; padding: 20px; text-align: center;">
+                <span style="font-size: 40px;">🚖</span>
+                <h2 style="margin:0; font-size: 20px; color:#065f46;">Driver Confirmed!</h2>
                 <h3 id="driver-name-display" style="margin:5px 0; font-size:16px;">Name</h3>
-                <h4 id="driver-price-display" style="margin:0; font-size: 24px; font-weight:bold;">Rs. 0</h4>
+                <h4 id="driver-price-display" style="margin:0; font-size: 24px; font-weight:bold; color:#059669;">Rs. 0</h4>
             </div>
         </div>
 
@@ -169,107 +168,95 @@
     <script src="firebase-init.js"></script>
 
     <script>
-        // --- GLOBAL VARIABLES ---
+        // GLOBAL STATE
         let db, auth;
         let currentUser = null;
-        let selectedVehicle = null;
+        let currentVehicleType = null; // Stores selected type
         let activeReqRef = null;
         let activeReqId = null;
 
-        // --- 1. INITIALIZE ---
-        window.addEventListener('load', () => {
-            if (typeof firebase === 'undefined') {
-                alert("Critical Error: Firebase SDK not loaded.");
-                return;
-            }
+        // 1. INIT
+        window.onload = function() {
+            if (typeof firebase === 'undefined') return alert("Firebase SDK Error");
             db = firebase.database();
             auth = firebase.auth();
 
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    console.log("Auth Success:", user.uid);
+                    console.log("Logged in:", user.uid);
                     currentUser = { id: user.uid, phone: user.phoneNumber || '' };
                     
-                    // Pre-fill phone if available from Google
-                    if(currentUser.phone) {
+                    // Pre-fill phone if not empty
+                    if(currentUser.phone && !document.getElementById('inp-phone').value) {
                         document.getElementById('inp-phone').value = currentUser.phone;
                     }
-                    
-                    // START LISTENING FOR REQUESTS
                     listenForMyRequests();
                 } else {
                     window.location.href = "index.html";
                 }
             });
-        });
+        };
 
-        // --- 2. SELECT VEHICLE (UI) ---
-        function selectVehicle(type, element) {
-            selectedVehicle = type;
-            // Remove 'selected' from all
-            document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-            // Add 'selected' to clicked
-            element.classList.add('selected');
-        }
+        // 2. ROBUST VEHICLE SELECTION
+        window.selectVehicle = function(type) {
+            currentVehicleType = type;
+            // Clear styles for all
+            const items = document.querySelectorAll('.vehicle-item');
+            items.forEach(el => {
+                el.style.border = "2px solid #e2e8f0";
+                el.style.backgroundColor = "white";
+                el.style.transform = "scale(1)";
+            });
 
-        // --- 3. LISTENER ---
+            // Set style for selected (using ID)
+            const active = document.getElementById('btn-' + type);
+            if(active) {
+                active.style.border = "2px solid #10b981"; // Green Border
+                active.style.backgroundColor = "#d1fae5"; // Light Green BG
+                active.style.transform = "scale(1.05)";
+            }
+        };
+
+        // 3. LISTEN FOR REQUESTS
         function listenForMyRequests() {
             if (!currentUser) return;
-            const listContainer = document.getElementById('my-requests-list');
+            const list = document.getElementById('my-requests-list');
 
-            const query = db.ref('requests').orderByChild('riderId').equalTo(currentUser.id);
-
-            query.on('value', (snapshot) => {
-                listContainer.innerHTML = ''; // Clear current list
-
-                if (!snapshot.exists()) {
-                    listContainer.innerHTML = '<p style="color:#94a3b8; text-align: center; margin-top:20px;">No active requests.</p>';
+            db.ref('requests').orderByChild('riderId').equalTo(currentUser.id).on('value', snap => {
+                list.innerHTML = '';
+                if (!snap.exists()) {
+                    list.innerHTML = '<p style="color:#94a3b8; text-align: center; margin-top:20px;">No active requests.</p>';
                     return;
                 }
+                
+                const reqs = [];
+                snap.forEach(c => reqs.push({ k: c.key, v: c.val() }));
+                reqs.reverse();
 
-                const requests = [];
-                snapshot.forEach(child => {
-                    requests.push({ key: child.key, val: child.val() });
-                });
-
-                requests.reverse(); // Newest First
-
-                let visibleCount = 0;
-                requests.forEach(item => {
-                    const r = item.val;
-                    if (r.status === 'cancelled' || r.status === 'deleted') return;
-
-                    visibleCount++;
+                reqs.forEach(item => {
+                    const r = item.v;
+                    if(r.status === 'cancelled' || r.status === 'deleted') return;
+                    
                     const div = document.createElement('div');
                     div.className = 'req-card';
-                    if (r.status === 'confirmed') div.classList.add('status-confirmed');
+                    if(r.status === 'confirmed') div.classList.add('status-confirmed');
+                    div.onclick = () => openDetails(item.k);
                     
-                    div.onclick = () => openDetails(item.key);
-
-                    // Safer vehicleType check
-                    const vType = r.vehicleType ? r.vehicleType.toUpperCase() : 'TAXI';
-                    const displayStatus = r.status ? r.status.toUpperCase() : 'PENDING';
-
                     div.innerHTML = `
-                        <span class="req-status">${displayStatus}</span>
-                        <div style="font-weight:bold; color:#1e293b; font-size:15px;">${r.drop}</div>
-                        <div style="font-size:12px; color:#64748b;">From: ${r.pickup}</div>
-                        <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${vType}</div>
+                        <span style="float:right; font-size:10px; background:#fef3c7; padding:2px 5px;">${(r.status||'').toUpperCase()}</span>
+                        <strong>${r.drop}</strong><br>
+                        <small style="color:#666">Pickup: ${r.pickup}</small>
                     `;
-                    listContainer.appendChild(div);
+                    list.appendChild(div);
                 });
-
-                if (visibleCount === 0) {
-                    listContainer.innerHTML = '<p style="color:#94a3b8; text-align: center; margin-top:20px;">No active requests.</p>';
-                }
             });
         }
 
-        // --- 4. SUBMIT REQUEST (GPS ENFORCED) ---
-        function startRequestProcess() {
-            // Check vehicle selection
-            if (!selectedVehicle) {
-                alert("Please click on a vehicle type (Bike, Rickshaw, etc.) to select it.");
+        // 4. SUBMIT WITH STRICT GPS
+        window.startRequestProcess = function() {
+            // Validate Vehicle
+            if (!currentVehicleType) {
+                alert("⚠️ Please select a Vehicle Type (tap an icon).");
                 return;
             }
             
@@ -277,173 +264,155 @@
             const drop = document.getElementById('inp-drop').value;
             const phone = document.getElementById('inp-phone').value;
             const landmark = document.getElementById('inp-landmark').value;
-            
-            if (!pickup || !drop) return alert("Enter Pickup and Drop locations.");
+
+            if (!pickup || !drop) return alert("Please enter Pickup and Drop locations.");
             if (!phone) return alert("Please enter your Phone Number.");
 
-            // Show Loading
+            // Start GPS Process
             document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "Acquiring High-Accuracy GPS...";
+            document.getElementById('loading-text').innerText = "Locating GPS Satellites...";
             document.getElementById('cancel-gps-btn').style.display = 'block';
 
             if (navigator.geolocation) {
-                const geoOptions = {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                };
-
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        // Success: Found GPS
+                        // SUCCESS
                         submitData(pos.coords.latitude, pos.coords.longitude, pickup, drop, landmark, phone);
                     },
                     (err) => {
-                        // Error: GPS Failed - STOP PROCESS
+                        // FAIL
                         document.getElementById('loading-overlay').style.display = 'none';
-                        
-                        if(err.code === 1) {
-                            alert("⚠️ Permission Denied.\n\nPlease allow Location access in your browser settings to use RideLink.");
-                        } else {
-                            alert("⚠️ GPS Signal Weak!\n\nPlease move to an open area (outdoors) for better satellite reception and try again.\n\nWe need your exact location for the driver to find you.");
-                        }
+                        if(err.code === 1) alert("Permission Denied. Enable Location.");
+                        else alert("⚠️ Weak GPS Signal!\n\nPlease go outdoors to get a clear signal. We cannot book a ride without your exact location.");
                     },
-                    geoOptions
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             } else {
-                alert("Error: Your device does not support GPS.");
+                alert("GPS not supported.");
                 document.getElementById('loading-overlay').style.display = 'none';
             }
-        }
+        };
 
-        function cancelProcess() {
+        window.cancelProcess = function() {
             document.getElementById('loading-overlay').style.display = 'none';
-        }
+        };
 
         function submitData(lat, lng, pickup, drop, landmark, phone) {
-            document.getElementById('loading-text').innerText = "Sending Request...";
+            document.getElementById('loading-text').innerText = "Sending...";
             document.getElementById('cancel-gps-btn').style.display = 'none';
-            
-            const reqData = {
+
+            const data = {
                 riderId: currentUser.id,
-                riderPhone: phone, // Use the manually entered phone
-                pickup: pickup, 
-                drop: drop, 
-                landmark: landmark,
-                vehicleType: selectedVehicle,
+                riderPhone: phone,
+                pickup: pickup, drop: drop, landmark: landmark,
+                vehicleType: currentVehicleType,
                 lat: lat, lng: lng,
                 status: 'pending',
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
-            db.ref('requests').push(reqData)
-                .then(() => {
-                    document.getElementById('loading-overlay').style.display = 'none';
-                    alert("✅ Request Sent!");
-                    
-                    // Reset UI
-                    document.getElementById('inp-pickup').value = '';
-                    document.getElementById('inp-drop').value = '';
-                    document.getElementById('inp-landmark').value = '';
-                    // Keep vehicle selected or reset? Let's reset for clarity
-                    selectedVehicle = null;
-                    document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-                })
-                .catch(err => {
-                    document.getElementById('loading-overlay').style.display = 'none';
-                    alert("Error: " + err.message);
+            db.ref('requests').push(data).then(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+                alert("✅ Request Sent!");
+                // Clear form
+                document.getElementById('inp-pickup').value = "";
+                document.getElementById('inp-drop').value = "";
+                document.getElementById('inp-landmark').value = "";
+                // Reset Selection
+                currentVehicleType = null;
+                document.querySelectorAll('.vehicle-item').forEach(el => {
+                    el.style.border = "2px solid #e2e8f0";
+                    el.style.backgroundColor = "white";
+                    el.style.transform = "scale(1)";
                 });
+            });
         }
 
-        // --- 5. DETAILS VIEW ---
-        function openDetails(key) {
+        // 5. DETAILS
+        window.openDetails = function(key) {
             activeReqId = key;
             document.getElementById('view-home').style.display = 'none';
             document.getElementById('view-details').style.display = 'block';
-            window.scrollTo(0,0);
 
+            if(activeReqRef) activeReqRef.off();
             activeReqRef = db.ref('requests/' + key);
+            
             activeReqRef.on('value', snap => {
                 if(!snap.exists()) { alert("Request deleted"); closeDetails(); return; }
-                const data = snap.val();
-                
-                const safeStatus = (data.status || 'unknown').toUpperCase();
+                const d = snap.val();
 
-                document.getElementById('disp-status').innerText = safeStatus;
-                document.getElementById('disp-pickup').innerText = data.pickup;
-                document.getElementById('disp-drop').innerText = data.drop;
+                document.getElementById('disp-status').innerText = (d.status||'').toUpperCase();
+                document.getElementById('disp-pickup').innerText = d.pickup;
+                document.getElementById('disp-drop').innerText = d.drop;
 
-                // Handle Logic
-                const bidsList = document.getElementById('bids-list');
-                const bidsSection = document.getElementById('section-bids');
-                const pendingSection = document.getElementById('section-pending');
-                const confirmedSection = document.getElementById('section-confirmed');
+                // Toggle Sections
+                const secBids = document.getElementById('section-bids');
+                const secConf = document.getElementById('section-confirmed');
+                const secPend = document.getElementById('section-pending');
 
-                if (data.status === 'confirmed') {
-                    pendingSection.style.display = 'none';
-                    bidsSection.style.display = 'none';
-                    confirmedSection.style.display = 'block';
-                    document.getElementById('driver-name-display').innerText = data.selectedDriverName;
-                    document.getElementById('driver-price-display').innerText = "Rs. " + data.agreedPrice;
+                if(d.status === 'confirmed') {
+                    secBids.style.display = 'none';
+                    secPend.style.display = 'none';
+                    secConf.style.display = 'block';
+                    document.getElementById('driver-name-display').innerText = d.selectedDriverName;
+                    document.getElementById('driver-price-display').innerText = "Rs. " + d.agreedPrice;
                 } else {
-                    confirmedSection.style.display = 'none';
-                    pendingSection.style.display = 'block';
-                    bidsSection.style.display = 'block';
-
-                    // Bids
-                    bidsList.innerHTML = '';
-                    if (data.bids) {
+                    secConf.style.display = 'none';
+                    secPend.style.display = 'block';
+                    secBids.style.display = 'block';
+                    
+                    // Render Bids
+                    const list = document.getElementById('bids-list');
+                    list.innerHTML = '';
+                    if(d.bids) {
                         document.getElementById('no-bids-msg').style.display = 'none';
-                        Object.keys(data.bids).forEach(bidKey => {
-                            const bid = data.bids[bidKey];
+                        Object.keys(d.bids).forEach(k => {
+                            const bid = d.bids[k];
+                            // Correct Plate Logic
                             const plate = bid.vehiclePlate || bid.plateNumber || '---';
-
+                            
                             const div = document.createElement('div');
                             div.className = 'bid-card';
                             div.innerHTML = `
-                                <div>
-                                    <strong>${bid.driverName}</strong><br>
-                                    <small>${bid.vehicleModel} (<span style="font-weight:bold; color:#333;">${plate}</span>)</small>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div style="font-weight:bold; color:#10b981; font-size:18px;">Rs. ${bid.price}</div>
-                                    <button onclick="acceptBid('${key}', '${bidKey}', '${bid.driverName}', ${bid.price})" style="background:#10b981; color:white; border:none; border-radius:5px; padding:5px 10px; font-size:12px; font-weight:bold; margin-top:5px;">Accept</button>
+                                <div><strong>${bid.driverName}</strong><br><small>${bid.vehicleModel} (${plate})</small></div>
+                                <div style="text-align:right">
+                                    <div style="font-weight:bold; color:#10b981; font-size:18px;">Rs ${bid.price}</div>
+                                    <button onclick="acceptBid('${key}','${k}','${bid.driverName}',${bid.price})" style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:5px; font-weight:bold; margin-top:5px;">Accept</button>
                                 </div>
                             `;
-                            bidsList.appendChild(div);
+                            list.appendChild(div);
                         });
                     } else {
                         document.getElementById('no-bids-msg').style.display = 'block';
                     }
                 }
             });
-        }
+        };
 
-        function acceptBid(reqId, driverId, driverName, price) {
-            if(confirm(`Accept ride for Rs. ${price}?`)) {
+        window.acceptBid = function(reqId, drvId, drvName, price) {
+            if(confirm("Accept ride for Rs " + price + "?")) {
                 db.ref('requests/' + reqId).update({
                     status: 'confirmed',
-                    selectedDriverId: driverId,
-                    selectedDriverName: driverName,
+                    selectedDriverId: drvId,
+                    selectedDriverName: drvName,
                     agreedPrice: price
                 });
             }
-        }
+        };
 
-        function closeDetails() {
+        window.closeDetails = function() {
             if(activeReqRef) activeReqRef.off();
             document.getElementById('view-details').style.display = 'none';
             document.getElementById('view-home').style.display = 'block';
-        }
+        };
 
-        function deleteCurrentRequest() {
+        window.deleteCurrentRequest = function() {
             if(confirm("Cancel Request?")) {
-                db.ref('requests/' + activeReqId).update({ status: 'cancelled' })
-                .then(() => closeDetails());
+                db.ref('requests/' + activeReqId).update({status: 'cancelled'}).then(() => closeDetails());
             }
-        }
+        };
 
-        function logout() { auth.signOut().then(() => window.location.href = "index.html"); }
+        window.logout = function() { auth.signOut().then(() => window.location.href="index.html"); };
     </script>
 </body>
 </html>
