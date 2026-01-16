@@ -13,18 +13,14 @@
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* GEM Branding Colors */
         :root {
             --primary-dark: #1e293b;
             --accent-green: #10b981;
             --warning-orange: #f59e0b;
-            --danger-red: #ef4444;
         }
 
-        /* Login Card */
         .login-wrapper { display: flex; align-items: center; justify-content: center; height: 100vh; }
 
-        /* Header */
         .admin-header { 
             background: var(--primary-dark); 
             color: white; 
@@ -33,26 +29,21 @@
             justify-content: space-between; 
             align-items: center; 
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            position: sticky; top: 0; z-index: 1000;
         }
 
         .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; }
         
-        /* Status Badges */
-        .badge-pending { background-color: var(--warning-orange); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; letter-spacing: 0.5px; }
-        .badge-active { background-color: var(--accent-green); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; letter-spacing: 0.5px; }
+        .badge-pending { background-color: var(--warning-orange); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
+        .badge-active { background-color: var(--accent-green); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
         .badge-blocked { background-color: var(--primary-dark); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
 
         .btn-action { font-size: 12px; padding: 5px 10px; margin: 2px; border-radius: 6px; }
         
-        /* Tabs */
         .nav-tabs .nav-link { color: #64748b; font-weight: 600; border: none; cursor: pointer; }
         .nav-tabs .nav-link.active { color: var(--primary-dark); border-bottom: 3px solid var(--accent-green); background: transparent; }
         
         .danger-zone { border: 1px solid #fca5a5; background: #fef2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-
         .stat-value { font-size: 2rem; font-weight: 700; color: var(--primary-dark); }
         .detail-row { font-size: 0.85rem; line-height: 1.5; color: #475569; }
     </style>
@@ -63,16 +54,12 @@
         <div class="card p-5 text-center" style="width: 100%; max-width: 400px;">
             <h3 class="mb-2">💎 RideLink GEM</h3>
             <p class="text-muted mb-4">Super Admin Access</p>
-            
-            <button class="btn btn-dark btn-block btn-lg" onclick="adminLogin()">
-                Sign in with Google
-            </button>
+            <button class="btn btn-dark btn-block btn-lg" onclick="adminLogin()">Sign in with Google</button>
             <p id="error-msg" class="text-danger mt-3 small font-weight-bold"></p>
         </div>
     </div>
 
     <div id="admin-dashboard" style="display: none;">
-        
         <div class="admin-header">
             <h5 style="margin:0;">💎 RideLink GEM <small style="opacity:0.7;">| Control Center</small></h5>
             <div>
@@ -82,51 +69,23 @@
         </div>
 
         <div class="container mt-4">
-            
             <div class="row">
-                <div class="col-md-3">
-                    <div class="card p-3 text-center">
-                        <h6 class="text-muted text-uppercase small">Active Drivers</h6>
-                        <div class="stat-value" id="total-drivers">0</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card p-3 text-center">
-                        <h6 class="text-muted text-uppercase small">Active Riders</h6>
-                        <div class="stat-value" id="total-riders">0</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card p-3 text-center">
-                        <h6 class="text-warning text-uppercase small">Pending Review</h6>
-                        <div class="stat-value" id="pending-count">0</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card p-3 text-center">
-                        <h6 class="text-success text-uppercase small">System Float</h6>
-                        <div class="stat-value" id="total-wallet">₹ 0</div>
-                    </div>
-                </div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Active Drivers</h6><div class="stat-value" id="total-drivers">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Active Riders</h6><div class="stat-value" id="total-riders">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending Review</h6><div class="stat-value" id="pending-count">0</div></div></div>
+                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">System Float</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
             </div>
 
             <div class="danger-zone d-flex justify-content-between align-items-center">
-                <span>
-                    <strong class="text-danger">⚠️ Database Reset:</strong> 
-                    <small class="text-muted">Use this only for critical testing. This cannot be undone.</small>
-                </span>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteAllUsers()">🗑 WIPE ALL DATA</button>
+                <span><strong class="text-danger">⚠️ Database Reset:</strong> <small class="text-muted">Use only for testing.</small></span>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteAllUsers()">🗑 WIPE DATA</button>
             </div>
 
             <div class="card">
                 <div class="card-header bg-white pb-0">
-                    <ul class="nav nav-tabs border-0" id="adminTabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" onclick="switchTab('drivers')">🚖 Drivers</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" onclick="switchTab('riders')">🚶‍♂️ Riders</a>
-                        </li>
+                    <ul class="nav nav-tabs border-0">
+                        <li class="nav-item"><a class="nav-link active" onclick="switchTab('drivers')">🚖 Drivers</a></li>
+                        <li class="nav-item"><a class="nav-link" onclick="switchTab('riders')">🚶‍♂️ Riders</a></li>
                     </ul>
                 </div>
                 <div class="card-body p-0">
@@ -134,20 +93,18 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="bg-light">
                                 <tr>
-                                    <th width="20%" class="pl-4">User Identity</th>
-                                    <th width="35%">Verification Details</th>
-                                    <th width="15%">Wallet Balance</th>
+                                    <th width="20%" class="pl-4">User</th>
+                                    <th width="35%">Details</th>
+                                    <th width="15%">Wallet</th>
                                     <th width="10%">Status</th>
                                     <th width="20%" class="text-right pr-4">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-body">
-                                </tbody>
+                            <tbody id="table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -155,72 +112,73 @@
 
     <script>
         // ==========================================
-        // 🛑 SECURITY: ALLOWED ADMIN EMAILS
+        // 🛑 CONFIG: ADMIN EMAILS
         // ==========================================
         const ADMIN_EMAILS = [
             "rcdotopi@gmail.com",
-            // "another.admin@gmail.com" 
+            // Add other admins here
         ];
 
-        // Global Variables
-        let db, auth;
         let currentTab = 'drivers'; 
         let allUsers = {}; 
 
-        // 1. INITIALIZATION & CHECK
-        window.addEventListener('load', () => {
-            try {
-                // We assume firebase-init.js has run firebase.initializeApp()
-                db = firebase.database();
-                auth = firebase.auth();
-                
-                // Start Auth Listener
-                initAuthListener();
-            } catch (error) {
-                console.error("Firebase not initialized. Check firebase-init.js");
-                document.getElementById('error-msg').innerText = "Error: firebase-init.js not found or invalid.";
+        // 1. INITIALIZATION CHECK
+        // We do NOT declare 'let db, auth' here because firebase-init.js already did it!
+        
+        window.onload = function() {
+            // Check if firebase-init.js loaded correctly
+            if (typeof firebase === 'undefined' || typeof db === 'undefined' || typeof auth === 'undefined') {
+                console.error("Firebase not found. Check firebase-init.js");
+                document.getElementById('error-msg').innerText = "Error: firebase-init.js not loaded.";
+                return;
             }
-        });
+
+            console.log("Admin Dashboard: Hooking into existing Firebase connection...");
+            initAuthListener();
+        };
 
         // 2. AUTH LOGIC
         function initAuthListener() {
             auth.onAuthStateChanged((user) => {
                 if (user && ADMIN_EMAILS.includes(user.email)) {
                     // Success
+                    console.log("Admin Logged In:", user.email);
                     document.getElementById('admin-login').style.display = 'none';
                     document.getElementById('admin-dashboard').style.display = 'block';
                     document.getElementById('admin-email-display').innerText = user.email;
                     loadUsers();
                 } else {
-                    // Fail or Logout
+                    // Not logged in or Not Admin
                     document.getElementById('admin-login').style.display = 'flex';
                     document.getElementById('admin-dashboard').style.display = 'none';
+                    
                     if(user) {
-                        document.getElementById('error-msg').innerText = "🚫 Access Denied: " + user.email + " is not an admin.";
-                        auth.signOut();
+                        // User is logged in to Google, but email is not in the ADMIN list
+                        document.getElementById('error-msg').innerText = "🚫 Access Denied: " + user.email;
+                        // Optional: auth.signOut(); // force logout if you want
                     }
                 }
             });
         }
 
-        function adminLogin() {
+        // Make these functions global so HTML buttons can see them
+        window.adminLogin = function() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).catch(e => alert(e.message));
         }
 
-        function logout() {
+        window.logout = function() {
             auth.signOut().then(() => location.reload());
         }
 
-        function switchTab(tab) {
+        window.switchTab = function(tab) {
             currentTab = tab;
-            // UI Toggle
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             renderTable();
         }
 
-        // 3. DATA LOADING (REAL-TIME)
+        // 3. DATA LOADING
         function loadUsers() {
             db.ref('users').on('value', (snapshot) => {
                 allUsers = snapshot.val() || {};
@@ -241,166 +199,94 @@
                 const uid = key;
                 let showRow = false;
 
-                // Filter based on Tab
                 if (currentTab === 'drivers' && (user.driverStatus || user.role === 'driver')) showRow = true;
                 if (currentTab === 'riders' && (user.riderStatus || user.role === 'rider')) showRow = true;
 
                 if (!showRow) return;
 
-                // Determine Status
                 const status = currentTab === 'drivers' ? (user.driverStatus || 'pending') : (user.riderStatus || 'pending');
                 
-                // Badge Logic
-                let badgeClass = 'badge-pending';
-                if(status === 'active') badgeClass = 'badge-active';
-                if(status === 'blocked') badgeClass = 'badge-blocked';
+                let badgeClass = status === 'active' ? 'badge-active' : (status === 'blocked' ? 'badge-blocked' : 'badge-pending');
                 const badgeHtml = `<span class="${badgeClass}">${status.toUpperCase()}</span>`;
 
-                // Verification Details (Based on your requirements)
                 let details = '';
                 if(currentTab === 'drivers') {
-                    // DRIVER DETAILS
-                    details = `
-                        <div class="detail-row">
-                            <strong>Parent/Guardian:</strong> ${user.parentName || 'N/A'}<br>
-                            <strong>CNIC/ID:</strong> ${user.cnic || 'N/A'}<br>
-                            <strong>Vehicle:</strong> ${user.vehicleType || '-'} (${user.vehicleColor || ''})<br>
-                            <strong>Plate:</strong> <span class="badge badge-light border">${user.vehicleReg || 'N/A'}</span>
-                        </div>
-                    `;
+                    details = `<div class="detail-row">
+                            <strong>Parent:</strong> ${user.parentName || '-'}<br>
+                            <strong>CNIC:</strong> ${user.cnic || '-'}<br>
+                            <strong>Veh:</strong> ${user.vehicleType || '-'} (${user.vehicleColor || ''}) - ${user.vehicleReg || ''}
+                        </div>`;
                 } else {
-                    // RIDER DETAILS
-                    details = `
-                        <div class="detail-row">
-                            <strong>Contact:</strong> ${user.phone || 'N/A'}<br>
-                            <strong>Joined:</strong> ${new Date(user.joined || Date.now()).toLocaleDateString()}
-                        </div>
-                    `;
+                    details = `<div class="detail-row"><strong>Phone:</strong> ${user.phone || '-'}</div>`;
                 }
 
-                // Action Buttons
                 let btns = '';
-                
-                // APPROVE BUTTON (Only for pending)
                 if(status === 'pending') {
-                    btns += `<button class="btn btn-success btn-action mb-2" style="width:100%" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve & Activate</button><br>`;
+                    btns += `<button class="btn btn-success btn-action mb-1" style="width:100%" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve</button><br>`;
                 }
-
-                btns += `
-                    <button class="btn btn-light border btn-action mt-1" onclick="editWallet('${uid}', ${user.wallet || 0})">💰 Wallet</button>
-                    <button class="btn btn-light border btn-action mt-1 text-danger" onclick="blockUser('${uid}', '${currentTab}')">🚫 Block</button>
-                    <button class="btn btn-light border btn-action mt-1" onclick="deleteUser('${uid}')">🗑 Del</button>
-                `;
+                btns += `<button class="btn btn-light border btn-action" onclick="editWallet('${uid}', ${user.wallet || 0})">💰</button>
+                         <button class="btn btn-light border btn-action text-danger" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
+                         <button class="btn btn-light border btn-action" onclick="deleteUser('${uid}')">🗑</button>`;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="pl-4">
-                        <div class="d-flex align-items-center">
-                            <div style="width:40px; height:40px; background:#e2e8f0; border-radius:50%; margin-right:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#64748b;">
-                                ${user.name ? user.name.charAt(0).toUpperCase() : '?'}
-                            </div>
-                            <div>
-                                <strong>${user.name || 'Unknown'}</strong><br>
-                                <small class="text-muted" style="font-size:11px;">${user.email}</small>
-                            </div>
-                        </div>
-                    </td>
+                    <td class="pl-4"><strong>${user.name || 'Unknown'}</strong><br><small class="text-muted">${user.email}</small></td>
                     <td>${details}</td>
-                    <td class="font-weight-bold ${user.wallet < 0 ? 'text-danger' : 'text-success'}">
-                        ₹ ${user.wallet || 0}
-                    </td>
+                    <td class="font-weight-bold ${user.wallet < 0 ? 'text-danger' : 'text-success'}">₹ ${user.wallet || 0}</td>
                     <td>${badgeHtml}</td>
                     <td class="text-right pr-4">${btns}</td>
                 `;
-
-                // Sort Pending to top
                 if(status === 'pending') tbody.prepend(tr);
                 else tbody.append(tr);
             });
         }
 
-        // 5. UPDATE STATISTICS
         function updateStats() {
             let drivers = 0, riders = 0, pending = 0, wallet = 0;
-            
             Object.values(allUsers).forEach(u => {
                 if(u.driverStatus === 'active') drivers++;
                 if(u.riderStatus === 'active') riders++;
                 if(u.driverStatus === 'pending' || u.riderStatus === 'pending') pending++;
                 wallet += (parseInt(u.wallet) || 0);
             });
-
             document.getElementById('total-drivers').innerText = drivers;
             document.getElementById('total-riders').innerText = riders;
             document.getElementById('pending-count').innerText = pending;
             document.getElementById('total-wallet').innerText = "₹ " + wallet.toLocaleString();
         }
 
-        // ============================
-        // ⚡️ ACTIONS & LOGIC
-        // ============================
-
-        // APPROVE USER (Adds Startup Credit)
+        // 5. ACTIONS
         window.approveUser = function(uid, type) {
-            // Logic: Driver gets ₹1000, Rider gets ₹500
             const bonus = type === 'drivers' ? 1000 : 500; 
-            
-            if(confirm(`Approve this ${type.slice(0,-1)}?\n\nThis will:\n1. Mark them as Active\n2. Add ₹${bonus} welcome credit to their wallet.`)) {
-                
+            if(confirm(`Approve and add ₹${bonus} credit?`)) {
                 const updates = {};
-                if(type === 'drivers') updates.driverStatus = 'active';
-                else updates.riderStatus = 'active';
-
-                // Check current wallet safely
+                if(type === 'drivers') updates.driverStatus = 'active'; else updates.riderStatus = 'active';
                 db.ref('users/' + uid + '/wallet').once('value', snap => {
-                    const current = snap.val() || 0;
-                    updates.wallet = current + bonus;
+                    updates.wallet = (snap.val() || 0) + bonus;
                     db.ref('users/' + uid).update(updates);
                 });
             }
         };
 
-        // EDIT WALLET (With Penalty Rules)
         window.editWallet = function(uid, current) {
-            const val = prompt(
-                `Current Balance: ₹${current}\n\n` + 
-                `📝 PENALTY RULES:\n` +
-                `1. Rider Cancelled: Set balance to ₹250 (Penalty)\n` +
-                `2. Driver Cancelled: Deduct ₹500 from current\n\n` +
-                `Enter new exact balance:`, 
-                current
-            );
-            
-            if(val !== null && val.trim() !== "") {
-                db.ref('users/' + uid).update({ wallet: parseInt(val) });
-            }
+            const val = prompt(`Current: ₹${current}\nRider Cancel Penalty: Set to 250\nDriver Cancel Penalty: Deduct 500`, current);
+            if(val) db.ref('users/' + uid).update({ wallet: parseInt(val) });
         };
 
-        // BLOCK USER
         window.blockUser = function(uid, type) {
-            if(confirm("Block this user? They will be logged out and unable to access the app.")) {
+            if(confirm("Block user?")) {
                 const updates = {};
-                if(type === 'drivers') updates.driverStatus = 'blocked';
-                else updates.riderStatus = 'blocked';
+                if(type === 'drivers') updates.driverStatus = 'blocked'; else updates.riderStatus = 'blocked';
                 db.ref('users/' + uid).update(updates);
             }
         };
 
-        // DELETE USER
         window.deleteUser = function(uid) {
-            if(confirm("⚠️ PERMANENTLY DELETE?\nThis removes all their history, wallet, and data.")) {
-                db.ref('users/' + uid).remove();
-            }
+            if(confirm("Permanently delete?")) db.ref('users/' + uid).remove();
         };
 
-        // DELETE ALL USERS (Danger Zone)
         window.deleteAllUsers = function() {
-            const check = prompt("⚠️ DANGER ZONE ⚠️\n\nThis will wipe the entire database (Drivers & Riders).\n\nType 'DELETE' to confirm:");
-            if(check === 'DELETE') {
-                db.ref('users').remove()
-                .then(() => alert("Database wiped successfully."))
-                .catch(e => alert("Error: " + e.message));
-            }
+            if(prompt("Type DELETE to wipe all users:") === 'DELETE') db.ref('users').remove();
         };
 
     </script>
