@@ -27,8 +27,8 @@
         .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; }
         .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
         
-        /* SECURITY FIX: Overlay is VISIBLE (flex) by default. Hidden only via JS on auth success. */
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
+        /* SECURITY: Overlay is VISIBLE (flex) by default. Hidden only via JS on auth success. */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
     </style>
 </head>
 <body>
@@ -115,6 +115,7 @@
 
                 } else {
                     // 2. LOCK APP: Ensure Overlay is Visible if not logged in
+                    // DO NOT REDIRECT TO INDEX.HTML HERE
                     document.getElementById('auth-overlay').style.display = 'flex';
                 }
             });
@@ -174,13 +175,7 @@
                 const myList = document.getElementById('my-rides-list');
                 const historyList = document.getElementById('history-list');
                 
-                if(!snap.exists()) {
-                    newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
-                    myList.innerHTML = '';
-                    historyList.innerHTML = '';
-                    return;
-                }
-
+                // Keep "Waiting for GPS" if GPS is 0
                 if(myLat === 0 && myLng === 0) {
                     myList.innerHTML = '';
                     historyList.innerHTML = '';
@@ -188,6 +183,11 @@
                     newList.innerHTML = ''; 
                     myList.innerHTML = '';
                     historyList.innerHTML = '';
+                }
+
+                if(!snap.exists()) {
+                    if(myLat !== 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
+                    return;
                 }
 
                 const requests = [];
@@ -200,6 +200,7 @@
                     const r = item.v;
                     const reqId = item.k;
 
+                    // HISTORY
                     if(r.status === 'COMPLETED' && r.selectedDriverId === driverUser.id) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
@@ -209,6 +210,7 @@
                         return;
                     }
 
+                    // ACTIVE RIDES
                     if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
@@ -232,6 +234,7 @@
                         return; 
                     }
 
+                    // CANCELLED NOTICE
                     if(r.status === 'CANCELLED' && r.cancelledBy === 'RIDER' && r.bids && r.bids[driverUser.id]) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
@@ -241,9 +244,11 @@
                         return;
                     }
 
+                    // NEW JOBS
                     if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
                         if(driverUser.vehicleType && r.vehicleType && driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
                         
+                        // Strict GPS check for NEW jobs
                         if(myLat === 0 || myLng === 0) return; 
                         
                         const dist = getDistance(myLat, myLng, r.lat, r.lng);
