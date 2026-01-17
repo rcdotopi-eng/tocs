@@ -181,50 +181,78 @@
             document.getElementById(elementId).classList.add('selected');
         }
 
-        // --- SUBMIT PROCESS ---
-        function startRequestProcess() {
-            // Check blocked status first
-            db.ref('users/' + riderUser.id + '/isBlocked').once('value', snap => {
-                if(snap.val() === true) {
-                    return alert("🚫 You are blocked from making new requests due to previous penalty unpaid.");
-                }
-                
-                const pickup = document.getElementById('inp-pickup').value;
-                const drop = document.getElementById('inp-drop').value;
-                const phone = document.getElementById('inp-phone').value;
-                
-                if(!pickup || !drop || !phone) return alert("Please fill all fields.");
-                if(!riderVehicle) return alert("Please select a Vehicle Type.");
-
-                isRiderProcessing = true;
-                document.getElementById('loading-overlay').style.display = 'flex';
-                document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
-                document.getElementById('cancel-gps-btn').style.display = 'block';
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            if(!isRiderProcessing) return; 
-                            document.getElementById('loading-text').innerText = "✅ GPS Found! Sending...";
-                            setTimeout(() => {
-                                sendToBackend(position.coords.latitude, position.coords.longitude);
-                            }, 1000);
-                        },
-                        (error) => {
-                            if(!isRiderProcessing) return;
-                            document.getElementById('loading-overlay').style.display = 'none';
-                            alert("⚠️ Weak GPS Signal! Move outdoors.");
-                        },
-                        { timeout: 15000, enableHighAccuracy: true }
-                    );
-                } else {
-                    alert("GPS not supported.");
-                    document.getElementById('loading-overlay').style.display = 'none';
-                }
-            });
+       // --- SUBMIT PROCESS ---
+function startRequestProcess() {
+    // Check blocked status first
+    db.ref('users/' + riderUser.id + '/isBlocked').once('value', snap => {
+        if (snap.val() === true) {
+            return alert("🚫 You are blocked from making new requests due to previous penalty unpaid.");
         }
 
-        function sendToBackend(lat, lng) {
+        const pickup = document.getElementById('inp-pickup').value;
+        const drop = document.getElementById('inp-drop').value;
+        const phone = document.getElementById('inp-phone').value;
+
+        if (!pickup || !drop || !phone) return alert("Please fill all fields.");
+        if (!riderVehicle) return alert("Please select a Vehicle Type.");
+
+        isRiderProcessing = true;
+        document.getElementById('loading-overlay').style.display = 'flex';
+        document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
+        document.getElementById('cancel-gps-btn').style.display = 'block';
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    if (!isRiderProcessing) return;
+                    document.getElementById('loading-text').innerText = "✅ GPS Found! Checking active ride...";
+                    sendToBackend(position.coords.latitude, position.coords.longitude);
+                },
+                () => {
+                    if (!isRiderProcessing) return;
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    alert("⚠️ Weak GPS Signal! Move outdoors.");
+                },
+                { timeout: 15000, enableHighAccuracy: true }
+            );
+        } else {
+            alert("GPS not supported.");
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+    });
+}
+
+function sendToBackend(lat, lng) {
+
+    // 🔒 ENFORCE ONLY ONE ACTIVE RIDE PER RIDER
+    db.ref('requests')
+        .orderByChild('riderId')
+        .equalTo(riderUser.id)
+        .once('value')
+        .then(snapshot => {
+
+            let hasActive = false;
+
+            snapshot.forEach(child => {
+                const s = child.val().status;
+                if (
+                    s === 'pending' ||
+                    s === 'OFFERS_RECEIVED' ||
+                    s === 'CONFIRMED' ||
+                    s === 'INVESTIGATION'
+                ) {
+                    hasActive = true;
+                }
+            });
+
+            if (hasActive) {
+                isRiderProcessing = false;
+                document.getElementById('loading-overlay').style.display = 'none';
+                alert("⚠️ You already have an active ride. Please cancel or complete it first.");
+                return;
+            }
+
+            // ✅ CREATE REQUEST
             const requestData = {
                 riderId: riderUser.id,
                 riderName: riderUser.name || 'Rider',
@@ -239,10 +267,11 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
-            db.ref('requests').push(requestData).then((snap) => {
+            db.ref('requests').push(requestData).then(() => {
                 isRiderProcessing = false;
                 document.getElementById('loading-overlay').style.display = 'none';
                 alert("✅ Request Sent Successfully!");
+
                 document.getElementById('inp-pickup').value = "";
                 document.getElementById('inp-drop').value = "";
                 document.getElementById('inp-landmark').value = "";
@@ -252,12 +281,14 @@
                 alert("Error: " + error.message);
                 cancelProcess();
             });
-        }
+        });
+}
 
-        function cancelProcess() {
-            isRiderProcessing = false;
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
+function cancelProcess() {
+    isRiderProcessing = false;
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
 
         // --- LOAD REQUESTS ---
         function loadMyActiveRequests() {
@@ -446,3 +477,4 @@
     </script>
 </body>
 </html>
+
