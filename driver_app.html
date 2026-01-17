@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,37 +15,38 @@
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 90px; }
         
+        /* HEADER */
         .page-header { background: #28a745; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         
+        /* REQUEST CARDS */
         .req-card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ffc107; }
         .req-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
         .badge-vehicle { background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; }
         
+        /* INPUTS */
         .bid-controls { display: flex; gap: 10px; margin-top: 10px; }
         .bid-input { width: 60%; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; }
         .btn-bid { width: 40%; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; }
         
-        .btn-map { display: block; width: 100%; text-align: center; background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 13px; text-decoration: none; }
+        /* MAP BUTTON */
+        .btn-map { 
+            display: block; width: 100%; text-align: center; 
+            background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; 
+            padding: 8px; border-radius: 8px; margin-bottom: 10px; 
+            font-weight: bold; font-size: 13px; text-decoration: none;
+        }
         .btn-map:hover { text-decoration: none; background: #cfe2ff; color: #0056b3; }
 
+        /* BOTTOM NAV */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
         .nav-item { font-size: 12px; color: #999; cursor: pointer; text-align: center; }
         .nav-item.active { color: #28a745; font-weight: bold; }
 
+        /* GPS STATUS BAR */
         .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; cursor: pointer; }
-        .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
-
-        /* AUTH OVERLAY: Visible (flex) by default to block access. Hidden via JS. */
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
     </style>
 </head>
 <body>
-
-    <div id="auth-overlay">
-        <h3 style="margin-bottom: 15px;">🚖 Driver Panel</h3>
-        <p>Please log in to start driving.</p>
-        <button class="btn btn-light" style="font-weight:bold; color:#28a745;" onclick="login()">Sign in with Google</button>
-    </div>
 
     <div class="page-header">
         <div>
@@ -68,11 +70,6 @@
         <div id="my-rides-list"></div>
     </div>
 
-    <div id="tab-history" class="container mt-3" style="display:none;">
-        <h6 class="text-muted" style="font-size:12px; font-weight:700;">COMPLETED RIDES</h6>
-        <div id="history-list"></div>
-    </div>
-
     <div class="bottom-nav">
         <div class="nav-item active" id="btn-tab-new" onclick="switchTab('new')">
             <span style="font-size:20px; display:block;">📡</span> New Jobs
@@ -80,18 +77,18 @@
         <div class="nav-item" id="btn-tab-my" onclick="switchTab('my')">
             <span style="font-size:20px; display:block;">✅</span> My Rides
         </div>
-        <div class="nav-item" id="btn-tab-history" onclick="switchTab('history')">
-            <span style="font-size:20px; display:block;">📜</span> History
-        </div>
     </div>
 
     <script src="firebase-init.js"></script>
     <script>
+        // GLOBAL VARIABLES
         let driverUser;
         let myLat = 0, myLng = 0;
         let gpsInterval = null;
 
+        // 1. APP INIT
         window.onload = function() {
+            // Safety Check
             if (typeof db === 'undefined' || typeof auth === 'undefined') {
                 console.error("Firebase Init Failed. Creating fallback connection...");
                 db = firebase.database();
@@ -100,9 +97,6 @@
 
             auth.onAuthStateChanged(user => {
                 if(user) {
-                    // UNLOCK APP
-                    document.getElementById('auth-overlay').style.display = 'none';
-
                     const stored = localStorage.getItem("driverUser");
                     if(stored) {
                         driverUser = JSON.parse(stored);
@@ -111,36 +105,27 @@
                         driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
                     }
                     
+                    // START GPS IMMEDIATELY
                     startGpsTracking();
-
-                    // Load Profile to get correct vehicle type
-                    db.ref('users/' + user.uid).once('value').then(snap => {
-                        if(snap.exists()) {
-                            const dbProfile = snap.val();
-                            driverUser = { ...dbProfile, id: user.uid };
-                            localStorage.setItem("driverUser", JSON.stringify(driverUser));
-                        }
-                        listenForRequests();
-                    });
-
+                    
+                    // START LISTENING
+                    listenForRequests();
                 } else {
-                    // LOCK APP (Show Overlay)
-                    document.getElementById('auth-overlay').style.display = 'flex';
+                    window.location.href = "index.html"; 
                 }
             });
         };
 
-        function login() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then(() => {
-                // Auto-handled by listener
-            }).catch(e => alert(e.message));
-        }
-
+        // --- FEATURE: 2-MINUTE GPS UPDATE ---
         function startGpsTracking() {
+            // 1. Try immediately
             updateLocation();
+            
+            // 2. Schedule every 2 minutes (120,000 ms)
             if(gpsInterval) clearInterval(gpsInterval);
-            gpsInterval = setInterval(() => { updateLocation(); }, 30000); 
+            gpsInterval = setInterval(() => {
+                updateLocation();
+            }, 120000); 
         }
 
         function updateLocation() {
@@ -150,29 +135,42 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
+                        // SUCCESS
                         myLat = pos.coords.latitude;
                         myLng = pos.coords.longitude;
+                        
                         statusBadge.innerText = "✅ GPS: Active";
                         statusBadge.style.background = "rgba(255,255,255,0.3)";
 
+                        // Send to Firebase
                         db.ref('users/' + driverUser.id + '/location').update({
-                            lat: myLat, lng: myLng, timestamp: Date.now()
+                            lat: myLat,
+                            lng: myLng,
+                            timestamp: Date.now()
                         });
                         
+                        // Force list refresh in case it was stuck on "Waiting"
+                        // (The listenForRequests function will pick up the change because myLat is no longer 0)
                         listenForRequests();
                     },
                     (err) => {
+                        // ERROR
                         console.warn("GPS Error:", err);
                         statusBadge.innerText = "⚠️ GPS Failed (Tap to Retry)";
                         statusBadge.style.background = "#dc3545";
                     },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    { 
+                        enableHighAccuracy: true,
+                        timeout: 15000, // Timeout after 15s so it doesn't hang forever
+                        maximumAge: 0   // Force fresh location
+                    }
                 );
             } else {
                 statusBadge.innerText = "❌ GPS Not Supported";
             }
         }
 
+        // --- MATH: CALCULATE DISTANCE (Haversine) ---
         function getDistance(lat1, lon1, lat2, lon2) {
             if(!lat1 || !lon1 || !lat2 || !lon2) return 9999; 
             const R = 6371; 
@@ -186,25 +184,22 @@
 
         function deg2rad(deg) { return deg * (Math.PI/180); }
 
+        // --- MAIN LOGIC ---
         function listenForRequests() {
-            db.ref('requests').off(); 
-
+            // NOTE: We don't clear the list immediately here to prevent flickering
+            
             db.ref('requests').on('value', snap => {
                 const newList = document.getElementById('new-requests-list');
                 const myList = document.getElementById('my-rides-list');
-                const historyList = document.getElementById('history-list');
                 
-                // Only clear lists if we have data or GPS logic finished
+                // If GPS is still 0, we can't filter yet.
                 if(myLat === 0 && myLng === 0) {
                     newList.innerHTML = '<p class="text-center mt-4" style="color:#e67e22;">Waiting for GPS signal...<br><small>Make sure location is on</small></p>';
-                    myList.innerHTML = '';
-                    historyList.innerHTML = '';
                     return;
                 }
 
                 newList.innerHTML = '';
                 myList.innerHTML = '';
-                historyList.innerHTML = '';
 
                 if(!snap.exists()) {
                     newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
@@ -221,18 +216,10 @@
                     const r = item.v;
                     const reqId = item.k;
 
-                    // HISTORY
-                    if(r.status === 'COMPLETED' && r.selectedDriverId === driverUser.id) {
-                        const div = document.createElement('div');
-                        div.className = 'req-card';
-                        div.style.borderLeft = "5px solid #6c757d";
-                        div.innerHTML = `<h5>${r.drop}</h5><p class="mb-0">Fare: Rs. ${r.agreedPrice}</p><small class="text-muted">Completed</small>`;
-                        historyList.appendChild(div);
-                        return;
-                    }
+                    if(r.status === 'cancelled' || r.status === 'completed' || r.status === 'deleted') return;
 
-                    // ACTIVE RIDES
-                    if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
+                    // --- SECTION 1: MY ACTIVE RIDES ---
+                    if(r.status === 'confirmed' && r.selectedDriverId === driverUser.id) {
                         const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
                         const div = document.createElement('div');
                         div.className = 'req-card';
@@ -244,34 +231,20 @@
                             <p class="text-muted mb-1">Pass: ${r.riderName} <br> <a href="tel:${r.riderPhone}">${r.riderPhone}</a></p>
                             <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate to Passenger</a>
                             <h4 class="text-success mt-2">Rs. ${r.agreedPrice}</h4>
-                            
-                            <button class="btn-action" style="background:#007bff;" onclick="sendDriverUpdate('${reqId}')">🔔 Notify: Arriving</button>
-                            <button class="btn-action" style="background:#28a745;" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
-                            <button class="btn-action" style="background:#ffc107; color:black;" onclick="reportNoShow('${reqId}')">⚠️ Rider No-Show</button>
-                            <button class="btn-action" style="background:#dc3545;" onclick="cancelRide('${reqId}')">🚫 Cancel Ride</button>
+                            <button class="btn btn-outline-success btn-block mt-2" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
                         `;
                         myList.appendChild(div);
                         return; 
                     }
 
-                    // CANCELLED NOTICE
-                    if(r.status === 'CANCELLED' && r.cancelledBy === 'RIDER' && r.bids && r.bids[driverUser.id]) {
-                        const div = document.createElement('div');
-                        div.className = 'req-card';
-                        div.style.borderLeft = "5px solid #dc3545";
-                        div.innerHTML = `<p class="mb-0"><strong>Ride Cancelled by Rider.</strong><br>Stay motivated — new rides will come soon!</p>`;
-                        myList.appendChild(div);
-                        return;
-                    }
-
-                    // NEW JOBS
-                    if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
-                        // Vehicle Filter
+                    // --- SECTION 2: NEW JOBS (WITH FILTERS) ---
+                    if(r.status === 'pending') {
+                        // 1. Vehicle Filter
                         if(driverUser.vehicleType && r.vehicleType) {
                             if(driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
                         }
 
-                        // Distance Filter
+                        // 2. Distance Filter
                         const dist = getDistance(myLat, myLng, r.lat, r.lng);
                         if(dist > 5.0) return; 
 
@@ -324,46 +297,21 @@
             db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData).then(() => {
                 alert("Offer Sent!");
             });
-            db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' });
-        }
-
-        function sendDriverUpdate(reqId) {
-            if(confirm("Notify rider you are arriving?")) {
-                db.ref(`requests/${reqId}`).update({ driverStatus: 'Reaching in 5-10 minutes' });
-                alert("Rider notified.");
-            }
         }
 
         function completeRide(reqId) {
             if(confirm("Ride Finished?")) {
-                db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
-            }
-        }
-
-        function reportNoShow(reqId) {
-            if(confirm("Report Rider No-Show?")) {
-                db.ref(`requests/${reqId}`).update({ status: 'INVESTIGATION', cancelledBy: 'DRIVER', cancellationReason: 'RIDER_NO_SHOW' });
-                alert("Report submitted.");
-            }
-        }
-
-        function cancelRide(reqId) {
-            const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
-            if(confirm(msg)) {
-                const userRef = db.ref('users/' + driverUser.id);
-                userRef.child('balance').once('value', snap => {
-                    const bal = snap.val() || 0;
-                    userRef.update({ balance: bal - 300, isBlocked: true });
-                });
-                db.ref(`requests/${reqId}`).update({ status: 'CANCELLED', cancelledBy: 'DRIVER', cancellationReason: 'CONFIRMED_CANCEL_PENALTY' });
+                db.ref(`requests/${reqId}`).update({ status: 'completed' });
             }
         }
 
         function switchTab(tab) {
-            ['new', 'my', 'history'].forEach(t => {
-                document.getElementById('tab-'+t).style.display = (t===tab) ? 'block' : 'none';
-                document.getElementById('btn-tab-'+t).classList.toggle('active', t===tab);
-            });
+            document.getElementById('tab-new').style.display = 'none';
+            document.getElementById('tab-my').style.display = 'none';
+            document.getElementById('btn-tab-new').classList.remove('active');
+            document.getElementById('btn-tab-my').classList.remove('active');
+            document.getElementById('tab-' + tab).style.display = 'block';
+            document.getElementById('btn-tab-' + tab).classList.add('active');
         }
 
         function logout() {
