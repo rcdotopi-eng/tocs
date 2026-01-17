@@ -13,21 +13,28 @@
 
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 90px; }
+        
         .page-header { background: #28a745; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        
         .req-card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ffc107; }
         .req-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
         .badge-vehicle { background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; }
+        
         .bid-controls { display: flex; gap: 10px; margin-top: 10px; }
         .bid-input { width: 60%; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; }
         .btn-bid { width: 40%; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        
         .btn-map { display: block; width: 100%; text-align: center; background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 13px; text-decoration: none; }
+        .btn-map:hover { text-decoration: none; background: #cfe2ff; color: #0056b3; }
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
         .nav-item { font-size: 12px; color: #999; cursor: pointer; text-align: center; }
         .nav-item.active { color: #28a745; font-weight: bold; }
-        .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; }
+
+        .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; cursor: pointer; }
         .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
-        
-        /* SECURITY: Overlay is VISIBLE (flex) by default. Hidden only via JS on auth success. */
+
+        /* AUTH OVERLAY: Visible (flex) by default to block access. Hidden via JS. */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
     </style>
 </head>
@@ -42,7 +49,7 @@
     <div class="page-header">
         <div>
             <h2 style="margin:0; font-size:18px; font-weight:700;">🚖 Driver Panel</h2>
-            <span id="gps-indicator" class="gps-status">📡 GPS: Initializing...</span>
+            <span id="gps-indicator" class="gps-status" onclick="updateLocation()">📡 GPS: Loading... (Tap to Retry)</span>
         </div>
         <span onclick="logout()" style="color:white; font-size:12px; cursor:pointer;">Logout</span>
     </div>
@@ -50,7 +57,9 @@
     <div id="tab-new" class="container mt-3">
         <h6 class="text-muted" style="font-size:12px; font-weight:700;">JOBS NEARBY (5KM)</h6>
         <div id="new-requests-list">
-            <p class="text-center mt-4" style="color:#999;">Waiting for GPS location...</p>
+            <p class="text-center mt-4" style="color:#999;">
+                <span class="spinner-border spinner-border-sm"></span> Waiting for GPS...
+            </p>
         </div>
     </div>
 
@@ -66,10 +75,10 @@
 
     <div class="bottom-nav">
         <div class="nav-item active" id="btn-tab-new" onclick="switchTab('new')">
-            <span style="font-size:20px; display:block;">📡</span> New
+            <span style="font-size:20px; display:block;">📡</span> New Jobs
         </div>
         <div class="nav-item" id="btn-tab-my" onclick="switchTab('my')">
-            <span style="font-size:20px; display:block;">✅</span> Active
+            <span style="font-size:20px; display:block;">✅</span> My Rides
         </div>
         <div class="nav-item" id="btn-tab-history" onclick="switchTab('history')">
             <span style="font-size:20px; display:block;">📜</span> History
@@ -84,26 +93,27 @@
 
         window.onload = function() {
             if (typeof db === 'undefined' || typeof auth === 'undefined') {
+                console.error("Firebase Init Failed. Creating fallback connection...");
                 db = firebase.database();
                 auth = firebase.auth();
             }
 
-            // AUTH LISTENER
             auth.onAuthStateChanged(user => {
                 if(user) {
-                    // 1. UNLOCK APP: Hide Overlay ONLY when user is confirmed
+                    // UNLOCK APP
                     document.getElementById('auth-overlay').style.display = 'none';
-                    
+
                     const stored = localStorage.getItem("driverUser");
                     if(stored) {
                         driverUser = JSON.parse(stored);
-                        driverUser.id = user.uid;
+                        driverUser.id = user.uid; 
                     } else {
                         driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
                     }
-
+                    
                     startGpsTracking();
 
+                    // Load Profile to get correct vehicle type
                     db.ref('users/' + user.uid).once('value').then(snap => {
                         if(snap.exists()) {
                             const dbProfile = snap.val();
@@ -114,8 +124,7 @@
                     });
 
                 } else {
-                    // 2. LOCK APP: Ensure Overlay is Visible if not logged in
-                    // DO NOT REDIRECT TO INDEX.HTML HERE
+                    // LOCK APP (Show Overlay)
                     document.getElementById('auth-overlay').style.display = 'flex';
                 }
             });
@@ -124,48 +133,58 @@
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then(() => {
-                // Page will auto-reload via onAuthStateChanged and hide overlay
-            }).catch((e) => alert(e.message));
+                // Auto-handled by listener
+            }).catch(e => alert(e.message));
         }
 
         function startGpsTracking() {
             updateLocation();
-            gpsInterval = setInterval(() => { updateLocation(); }, 30000);
+            if(gpsInterval) clearInterval(gpsInterval);
+            gpsInterval = setInterval(() => { updateLocation(); }, 30000); 
         }
 
         function updateLocation() {
+            const statusBadge = document.getElementById('gps-indicator');
+            statusBadge.innerText = "📡 GPS: Updating...";
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         myLat = pos.coords.latitude;
                         myLng = pos.coords.longitude;
-                        document.getElementById('gps-indicator').innerText = "📡 GPS: Active";
-                        document.getElementById('gps-indicator').style.background = "rgba(255,255,255,0.3)";
-                        
+                        statusBadge.innerText = "✅ GPS: Active";
+                        statusBadge.style.background = "rgba(255,255,255,0.3)";
+
                         db.ref('users/' + driverUser.id + '/location').update({
                             lat: myLat, lng: myLng, timestamp: Date.now()
                         });
-                        listenForRequests(); 
+                        
+                        listenForRequests();
                     },
                     (err) => {
-                        document.getElementById('gps-indicator').innerText = "⚠️ GPS: Weak";
-                        listenForRequests(); 
+                        console.warn("GPS Error:", err);
+                        statusBadge.innerText = "⚠️ GPS Failed (Tap to Retry)";
+                        statusBadge.style.background = "#dc3545";
                     },
-                    { enableHighAccuracy: true }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
+            } else {
+                statusBadge.innerText = "❌ GPS Not Supported";
             }
         }
 
         function getDistance(lat1, lon1, lat2, lon2) {
             if(!lat1 || !lon1 || !lat2 || !lon2) return 9999; 
             const R = 6371; 
-            const dLat = (lat2 - lat1) * (Math.PI/180);
-            const dLon = (lon2 - lon1) * (Math.PI/180);
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
             return R * c; 
         }
+
+        function deg2rad(deg) { return deg * (Math.PI/180); }
 
         function listenForRequests() {
             db.ref('requests').off(); 
@@ -175,18 +194,20 @@
                 const myList = document.getElementById('my-rides-list');
                 const historyList = document.getElementById('history-list');
                 
-                // Keep "Waiting for GPS" if GPS is 0
+                // Only clear lists if we have data or GPS logic finished
                 if(myLat === 0 && myLng === 0) {
+                    newList.innerHTML = '<p class="text-center mt-4" style="color:#e67e22;">Waiting for GPS signal...<br><small>Make sure location is on</small></p>';
                     myList.innerHTML = '';
                     historyList.innerHTML = '';
-                } else {
-                    newList.innerHTML = ''; 
-                    myList.innerHTML = '';
-                    historyList.innerHTML = '';
+                    return;
                 }
 
+                newList.innerHTML = '';
+                myList.innerHTML = '';
+                historyList.innerHTML = '';
+
                 if(!snap.exists()) {
-                    if(myLat !== 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
+                    newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
                     return;
                 }
 
@@ -212,18 +233,17 @@
 
                     // ACTIVE RIDES
                     if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
+                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
                         const div = document.createElement('div');
                         div.className = 'req-card';
                         div.style.borderLeft = "5px solid #28a745";
-                        
-                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
-
                         div.innerHTML = `
                             <div class="alert alert-success p-2"><strong>✅ RIDE CONFIRMED!</strong></div>
                             <h5>${r.drop}</h5>
+                            <p class="text-muted mb-1">Pickup: ${r.pickup}</p>
                             <p class="text-muted mb-1">Pass: ${r.riderName} <br> <a href="tel:${r.riderPhone}">${r.riderPhone}</a></p>
+                            <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate to Passenger</a>
                             <h4 class="text-success mt-2">Rs. ${r.agreedPrice}</h4>
-                            <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate</a>
                             
                             <button class="btn-action" style="background:#007bff;" onclick="sendDriverUpdate('${reqId}')">🔔 Notify: Arriving</button>
                             <button class="btn-action" style="background:#28a745;" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
@@ -246,11 +266,12 @@
 
                     // NEW JOBS
                     if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
-                        if(driverUser.vehicleType && r.vehicleType && driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
-                        
-                        // Strict GPS check for NEW jobs
-                        if(myLat === 0 || myLng === 0) return; 
-                        
+                        // Vehicle Filter
+                        if(driverUser.vehicleType && r.vehicleType) {
+                            if(driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
+                        }
+
+                        // Distance Filter
                         const dist = getDistance(myLat, myLng, r.lat, r.lng);
                         if(dist > 5.0) return; 
 
@@ -260,32 +281,49 @@
                         
                         let bidHtml = myBid 
                             ? `<div class="alert alert-warning p-2 mt-2" style="font-size:12px;">⏳ You offered: <strong>Rs. ${myBid.price}</strong></div>`
-                            : `<div class="bid-controls"><input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)"><button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button></div>`;
+                            : `<div class="bid-controls">
+                                    <input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)">
+                                    <button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button>
+                               </div>`;
 
                         const div = document.createElement('div');
                         div.className = 'req-card';
                         div.innerHTML = `
-                            <div class="req-header"><span class="badge-vehicle">${(r.vehicleType||'TAXI').toUpperCase()}</span><span style="font-size:11px; color:#28a745;">${dist.toFixed(1)} km away</span></div>
-                            <h5 style="margin-bottom:5px;">${r.drop}</h5><p style="font-size:13px; color:#666; margin-bottom:10px;">From: ${r.pickup}</p>
-                            <a href="${mapLink}" target="_blank" class="btn-map" style="font-size:11px; padding:5px;">📍 Map</a>${bidHtml}
+                            <div class="req-header">
+                                <span class="badge-vehicle">${(r.vehicleType || 'Taxi').toUpperCase()}</span>
+                                <span style="font-size:11px; color:#28a745;">${dist.toFixed(1)} km away</span>
+                            </div>
+                            <h5 style="margin-bottom:5px;">${r.drop}</h5>
+                            <p style="font-size:13px; color:#666; margin-bottom:10px;">From: ${r.pickup}</p>
+                            <a href="${mapLink}" target="_blank" class="btn-map" style="font-size:11px; padding:5px;">📍 See Location on Map</a>
+                            ${bidHtml}
                         `;
                         newList.appendChild(div);
                     }
                 });
 
-                if(newCount === 0 && myLat !== 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No jobs within 5km.</p>';
+                if(newCount === 0) {
+                    newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No matching jobs within 5km.</p>';
+                }
             });
         }
 
         function sendOffer(reqId) {
             const price = document.getElementById('price-' + reqId).value;
-            if(!price) return alert("Enter price");
+            if(!price) return alert("Please enter a price.");
+
             const bidData = {
-                driverId: driverUser.id, driverName: driverUser.name,
-                vehicleModel: driverUser.vehicleType, vehiclePlate: driverUser.vehiclePlate || "ABC-000",
-                price: price, timestamp: Date.now()
+                driverId: driverUser.id,
+                driverName: driverUser.name || "Driver",
+                vehicleModel: (driverUser.vehicleType || "Taxi") + " " + (driverUser.vehicleColor || ""),
+                vehiclePlate: driverUser.vehiclePlate || "ABC-000",
+                price: price,
+                timestamp: Date.now()
             };
-            db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData);
+
+            db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData).then(() => {
+                alert("Offer Sent!");
+            });
             db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' });
         }
 
@@ -297,7 +335,9 @@
         }
 
         function completeRide(reqId) {
-            if(confirm("Ride Finished?")) db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
+            if(confirm("Ride Finished?")) {
+                db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
+            }
         }
 
         function reportNoShow(reqId) {
@@ -326,7 +366,9 @@
             });
         }
 
-        function logout() { auth.signOut().then(() => window.location.href="index.html"); }
+        function logout() {
+            auth.signOut().then(() => window.location.href="index.html");
+        }
     </script>
 </body>
 </html>
