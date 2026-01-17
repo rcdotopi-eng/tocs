@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Super Admin - RideLink GEM</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RideLink GEM - Driver Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e293b">
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -10,180 +12,259 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
-        .admin-header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; }
-        .badge-pending { background-color: #f59e0b; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-active { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-blocked { background-color: #1e293b; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .btn-action { font-size: 12px; padding: 5px 10px; margin: 2px; border-radius: 6px; }
-        .nav-tabs .nav-link { color: #64748b; font-weight: 600; cursor: pointer; }
-        .nav-tabs .nav-link.active { color: #1e293b; border-bottom: 3px solid #10b981; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: #1e293b; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; color: #333; }
+        
+        .container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
+        
+        .card { 
+            background: white; width: 100%; max-width: 400px; 
+            padding: 30px; border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; 
+            margin-bottom: 20px;
+        }
+
+        h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        
+        /* Inputs */
+        .input-group { margin-bottom: 15px; text-align: left; width: 100%; }
+        .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
+        .input-group input, .input-group select { 
+            width: 100%; padding: 12px; border: 1px solid #e2e8f0; 
+            border-radius: 8px; font-size: 16px; background: #f8fafc; 
+            box-sizing: border-box;
+        }
+        .input-group input:focus, .input-group select:focus { border-color: #10b981; outline: none; background: #fff; }
+
+        /* Buttons */
+        .btn-google { 
+            background: white; color: #333; border: 1px solid #cbd5e1; 
+            width: 100%; padding: 12px; border-radius: 10px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.2s;
+        }
+        .btn-google:active { background: #f1f5f9; transform: scale(0.98); }
+
+        .btn-green { 
+            background: #10b981; color: white; border: none; 
+            width: 100%; padding: 14px; border-radius: 10px; 
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+            transition: 0.2s;
+        }
+        .btn-green:active { transform: scale(0.98); }
+
+        .status-box { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 20px 0; text-align: left; }
     </style>
 </head>
 <body>
-    <div id="admin-login" class="container text-center" style="margin-top: 100px;">
-        <div class="card p-5 mx-auto" style="max-width: 400px;">
-            <h3>💎 RideLink GEM</h3>
-            <p>Admin Panel</p>
-            <button class="btn btn-dark btn-block" onclick="adminLogin()">Sign in with Google</button>
-            <p id="error-msg" class="text-danger mt-3"></p>
-        </div>
-    </div>
 
-    <div id="admin-dashboard" style="display: none;">
-        <div class="admin-header">
-            <h5 style="margin:0;">💎 Control Center</h5>
-            <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+    <div class="container">
+        
+        <div style="font-size: 50px; margin-bottom: 10px;">🚖</div>
+        <h1>RideLink Partner</h1>
+        <p style="color:#64748b; margin-bottom: 30px;">Drive & Earn on your own schedule</p>
+
+        <div id="view-login" class="card">
+            <h3 style="margin-top:0;">Login</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">
+                Sign in to access your dashboard or register as a new driver.
+            </p>
+
+            <button class="btn-google" onclick="loginWithGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                Continue with Google
+            </button>
+            <p id="status-text" style="margin-top: 20px; font-size: 13px; color: #94a3b8; font-weight: 500;"></p>
         </div>
 
-        <div class="container mt-4">
-            <div class="row">
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Drivers</h6><div class="stat-value" id="total-drivers">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Riders</h6><div class="stat-value" id="total-riders">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending</h6><div class="stat-value" id="pending-count">0</div></div></div>
-                <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">Wallet</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
+        <div id="view-register" class="card" style="display: none;">
+            <h3 style="margin-top:0; color: #10b981;">Driver Registration</h3>
+            <p style="font-size: 13px; color: #64748b;">Complete your profile to get approved.</p>
+            <hr>
+
+            <div class="input-group"><label>Full Name</label><input type="text" id="reg-name"></div>
+            <div class="input-group"><label>Parent/Guardian Name</label><input type="text" id="reg-parent"></div>
+            <div class="input-group"><label>Phone Number</label><input type="tel" id="reg-phone" oninput="formatPhone(this)" placeholder="03xx-xxxxxxx"></div>
+            <div class="input-group"><label>CNIC Number</label><input type="tel" id="reg-cnic" maxlength="15"></div>
+            <div class="input-group"><label>City / Area</label><input type="text" id="reg-address"></div>
+
+            <hr style="margin: 20px 0; border-top: 1px dashed #e2e8f0;">
+
+            <div class="input-group">
+                <label>Vehicle Type</label>
+                <select id="reg-vehicle-type">
+                    <option value="">Select Type...</option>
+                    <option value="bike">Bike 🏍️</option>
+                    <option value="rickshaw">Rickshaw 🛺</option>
+                    <option value="car">Car 🚗</option>
+                    <option value="carry">Carry 🚐</option>
+                    <option value="coaster">Coaster 🚌</option>
+                    <option value="loader">Loader 🚚</option>
+                    <option value="luxury">Luxury Car 🚘</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Vehicle Plate Number</label><input type="text" id="reg-plate" placeholder="ABC-123"></div>
+            <div class="input-group"><label>Vehicle Color</label><input type="text" id="reg-color"></div>
+
+            <div class="status-box">
+                <strong>🎁 Welcome Bonus:</strong><br>
+                Your wallet will be credited with <strong>Rs. 1000</strong> upon registration submission.
+                <br><br>
+                <strong>📞 Support:</strong> 0314-6415764
             </div>
 
-            <div class="card">
-                <div class="card-header bg-white pb-0">
-                    <ul class="nav nav-tabs border-0">
-                        <li class="nav-item"><a class="nav-link active" onclick="switchTab('drivers', this)">🚖 Drivers</a></li>
-                        <li class="nav-item"><a class="nav-link" onclick="switchTab('riders', this)">🚶‍♂️ Riders</a></li>
-                    </ul>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="bg-light">
-                                <tr><th class="pl-4">User</th><th>Details</th><th>Wallet</th><th>Status</th><th class="text-right pr-4">Actions</th></tr>
-                            </thead>
-                            <tbody id="table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <button class="btn-green" onclick="submitRegistration()">Submit Application</button>
         </div>
+
+        <div id="view-pending" class="card" style="display: none; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 15px;">⏳</div>
+            <h3 style="color: #d97706;">Verification Pending</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+                Your documents have been submitted.<br>
+                Admin verification usually takes <strong>2-4 hours</strong>.
+            </p>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #e2e8f0;">
+                <small style="color:#64748b; text-transform: uppercase; font-weight: bold;">Admin Contact</small><br>
+                <strong style="color: #1e293b; font-size: 16px;">0314-6415764</strong>
+            </div>
+            <button onclick="location.reload()" class="btn-google" style="margin-top: 20px; justify-content: center;">
+                Check Status Again
+            </button>
+        </div>
+
     </div>
 
     <script src="firebase-init.js"></script>
     <script>
-        const ADMIN_EMAILS = ["rcdotopi@gmail.com"]; 
-        let currentTab = 'drivers'; 
-        let allUsers = {}; 
+        let googleUser = null;
+        let existingData = null;
 
-        window.onload = function() {
-            if(!auth) return;
-            auth.onAuthStateChanged(user => {
-                if(user && ADMIN_EMAILS.includes(user.email)) {
-                    document.getElementById('admin-login').style.display = 'none';
-                    document.getElementById('admin-dashboard').style.display = 'block';
-                    loadUsers();
-                } else {
-                    document.getElementById('admin-login').style.display = 'block';
-                    document.getElementById('admin-dashboard').style.display = 'none';
-                    if(user) document.getElementById('error-msg').innerText = "Access Denied";
-                }
-            });
-        }
+        // 1. LOGIN FLOW
+        function loginWithGoogle() {
+            const btn = document.querySelector('.btn-google');
+            const txt = document.getElementById('status-text');
+            
+            btn.style.opacity = "0.5"; 
+            btn.style.pointerEvents = "none";
+            txt.innerText = "Connecting to Google...";
 
-        function adminLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-        function logout() { auth.signOut().then(() => location.reload()); }
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
 
-        // FIX: Switch Tab using explicit element reference
-        function switchTab(tab, element) {
-            currentTab = tab;
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            renderTable();
-        }
-
-        function loadUsers() {
-            db.ref('users').on('value', snap => {
-                allUsers = snap.val() || {};
-                renderTable();
-                updateStats();
-            });
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-            if(!allUsers) return;
-
-            Object.keys(allUsers).forEach(key => {
-                const user = allUsers[key];
-                const uid = key;
-                let showRow = false;
-                if (currentTab === 'drivers' && (user.driverStatus || user.role === 'driver')) showRow = true;
-                if (currentTab === 'riders' && (user.riderStatus || user.role === 'rider')) showRow = true;
-                if (!showRow) return;
-
-                const status = currentTab === 'drivers' ? (user.driverStatus || 'pending') : (user.riderStatus || 'pending');
-                let badgeClass = status === 'active' ? 'badge-active' : (status === 'blocked' ? 'badge-blocked' : 'badge-pending');
-                
-                // FIX: Using correct field names (vehiclePlate instead of vehicleReg)
-                let details = currentTab === 'drivers' 
-                    ? `<small>Parent: ${user.parentName || '-'}<br>CNIC: ${user.cnic || '-'}<br>Veh: ${user.vehicleType || '-'} (${user.vehiclePlate || 'No Plate'})</small>`
-                    : `<small>Phone: ${user.phone || '-'}</small>`;
-
-                let btns = `<button class="btn btn-light border btn-action" onclick="editWallet('${uid}', ${user.wallet || 0})">💰</button>
-                            <button class="btn btn-light border btn-action text-danger" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
-                            <button class="btn btn-light border btn-action" onclick="deleteUser('${uid}')">🗑</button>`;
-                
-                if(status === 'pending') {
-                    btns = `<button class="btn btn-success btn-action mb-1" style="width:100%" onclick="approveUser('${uid}', '${currentTab}')">✅ Approve</button><br>` + btns;
-                }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="pl-4"><strong>${user.name || 'Unknown'}</strong><br><small class="text-muted">${user.email}</small></td>
-                    <td>${details}</td>
-                    <td class="font-weight-bold ${user.wallet < 0 ? 'text-danger' : 'text-success'}">₹ ${user.wallet || 0}</td>
-                    <td><span class="${badgeClass}">${status.toUpperCase()}</span></td>
-                    <td class="text-right pr-4">${btns}</td>
-                `;
-                tbody.append(tr);
-            });
-        }
-
-        function updateStats() {
-            let drivers = 0, riders = 0, pending = 0, wallet = 0;
-            Object.values(allUsers).forEach(u => {
-                if(u.driverStatus === 'active') drivers++;
-                if(u.riderStatus === 'active') riders++;
-                if(u.driverStatus === 'pending' || u.riderStatus === 'pending') pending++;
-                wallet += (parseInt(u.wallet) || 0);
-            });
-            document.getElementById('total-drivers').innerText = drivers;
-            document.getElementById('total-riders').innerText = riders;
-            document.getElementById('pending-count').innerText = pending;
-            document.getElementById('total-wallet').innerText = "₹ " + wallet.toLocaleString();
-        }
-
-        window.approveUser = function(uid, type) {
-            const bonus = type === 'drivers' ? 1000 : 500;
-            if(confirm(`Approve and add ₹${bonus}?`)) {
-                db.ref(`users/${uid}`).update({
-                    [type === 'drivers' ? 'driverStatus' : 'riderStatus']: 'active',
-                    wallet: firebase.database.ServerValue.increment(bonus)
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    googleUser = result.user;
+                    txt.innerText = "Checking Database...";
+                    checkDatabase(googleUser.uid);
+                })
+                .catch((error) => {
+                    alert("Login Failed: " + error.message);
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+                    txt.innerText = "";
                 });
+        }
+
+        // 2. CHECK USER STATUS
+        function checkDatabase(uid) {
+            db.ref('users/' + uid).once('value').then((snapshot) => {
+                document.getElementById('view-login').style.display = 'none';
+
+                if (snapshot.exists()) {
+                    existingData = snapshot.val();
+                    // SAVE ID to local storage explicitly for app usage
+                    existingData.id = uid; 
+                    localStorage.setItem("driverUser", JSON.stringify(existingData));
+
+                    // ROUTING LOGIC
+                    if (existingData.driverStatus === 'active') {
+                        // APPROVED -> Go to App
+                        window.location.href = "driver_app.html";
+                    } else if (existingData.driverStatus === 'pending') {
+                        // PENDING -> Show Wait Screen
+                        document.getElementById('view-pending').style.display = 'block';
+                    } else {
+                        // BLOCKED or Rider trying to become Driver -> Show Form
+                        showRegistration(true);
+                    }
+                } else {
+                    // NEW USER -> Show Form
+                    showRegistration(false);
+                }
+            });
+        }
+
+        function showRegistration(isUpgrade) {
+            document.getElementById('view-register').style.display = 'block';
+            document.getElementById('reg-name').value = googleUser.displayName || "";
+            
+            // If they were a rider, pre-fill phone
+            if(isUpgrade && existingData && existingData.phone) {
+                document.getElementById('reg-phone').value = existingData.phone;
             }
-        };
+        }
 
-        window.editWallet = function(uid, cur) {
-            let val = prompt(`Current: ₹${cur}`, cur);
-            if(val) db.ref(`users/${uid}`).update({wallet: parseInt(val)});
-        };
+        // 3. SUBMIT FORM
+        function submitRegistration() {
+            const name = document.getElementById('reg-name').value;
+            const parent = document.getElementById('reg-parent').value;
+            const phone = document.getElementById('reg-phone').value;
+            const cnic = document.getElementById('reg-cnic').value;
+            const address = document.getElementById('reg-address').value;
+            const vType = document.getElementById('reg-vehicle-type').value;
+            const vPlate = document.getElementById('reg-plate').value;
+            const vColor = document.getElementById('reg-color').value;
 
-        window.blockUser = function(uid, type) {
-            if(confirm("Block user?")) db.ref(`users/${uid}`).update({[type === 'drivers' ? 'driverStatus' : 'riderStatus']: 'blocked'});
-        };
+            if(!name || !phone || !cnic || !vType || !vPlate) {
+                return alert("Please fill all required fields.");
+            }
 
-        window.deleteUser = function(uid) {
-            if(confirm("Delete?")) db.ref(`users/${uid}`).remove();
-        };
+            // Wallet Logic: Add 1000 if new driver
+            let currentWallet = (existingData && existingData.wallet) ? parseInt(existingData.wallet) : 0;
+            // Only add bonus if they aren't already a driver (prevent double bonus on profile edit)
+            if(!existingData || !existingData.driverStatus) {
+                currentWallet += 1000;
+            }
+
+            const updates = {
+                id: googleUser.uid, // Ensuring ID is saved in DB
+                name: name,
+                parentName: parent,
+                phone: phone,
+                cnic: cnic,
+                address: address,
+                vehicleType: vType,
+                vehiclePlate: vPlate,
+                vehicleColor: vColor,
+                email: googleUser.email,
+                driverStatus: 'pending', // Send to Pending
+                wallet: currentWallet,
+                role: 'driver', // Mark as driver
+                updatedAt: Date.now()
+            };
+
+            if(!existingData) updates.joined = Date.now();
+
+            db.ref('users/' + googleUser.uid).update(updates).then(() => {
+                // Update Local Storage
+                if(existingData) Object.assign(existingData, updates);
+                else existingData = updates;
+                
+                localStorage.setItem("driverUser", JSON.stringify(existingData));
+                
+                // Show Pending Screen
+                document.getElementById('view-register').style.display = 'none';
+                document.getElementById('view-pending').style.display = 'block';
+                window.scrollTo(0,0);
+            });
+        }
+
+        function formatPhone(input) {
+            let v = input.value.replace(/\D/g, ''); 
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 4) v = v.slice(0, 4) + "-" + v.slice(4);
+            input.value = v;
+        }
     </script>
 </body>
 </html>
