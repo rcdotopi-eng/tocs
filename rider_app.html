@@ -138,6 +138,10 @@
 
     <script src="firebase-init.js"></script>
     <script>
+        // 🔒 SAFETY FALLBACK (prevents db/auth undefined crashes)
+        if (typeof db === 'undefined') { var db = firebase.database(); }
+        if (typeof auth === 'undefined') { var auth = firebase.auth(); }
+
         // GLOBAL VARIABLES
         let riderUser = null;
         let riderVehicle = null;
@@ -146,47 +150,56 @@
         let currentReqId = null;
         let currentReqData = null;
 
+        // prevents repeated blocked alerts
+        let blockAlertShown = false;
+
         // --- INIT ---
-window.onload = function() {
-    firebase.auth().onAuthStateChanged(user => {
-        if (!user) {
-            window.location.href = "index.html";
-            return;
-        }
-        initApp(user);
-    });
-};
-
-function initApp(user) {
-    const saved = localStorage.getItem("taxiUser");
-    if (saved) {
-        riderUser = JSON.parse(saved);
-        riderUser.id = user.uid;
-    } else {
-        riderUser = {
-            id: user.uid,
-            name: user.displayName || 'Rider',
-            phone: ''
+        window.onload = function() {
+            auth.onAuthStateChanged(user => {
+                if (!user) {
+                    window.location.href = "index.html";
+                    return;
+                }
+                initApp(user);
+            });
         };
-    }
 
-    // Prefill phone if available
-    if (riderUser.phone) {
-        document.getElementById('inp-phone').value = riderUser.phone;
-    }
+        function initApp(user) {
+            const saved = localStorage.getItem("taxiUser");
+            if (saved) {
+                riderUser = JSON.parse(saved);
+                riderUser.id = user.uid;
+            } else {
+                riderUser = {
+                    id: user.uid,
+                    name: user.displayName || 'Rider',
+                    phone: ''
+                };
+            }
 
-    // 🔒 STRICT PENALTY BLOCK ENFORCEMENT (REALTIME)
-    db.ref('users/' + riderUser.id + '/isBlocked').on('value', snap => {
-        if (snap.val() === true) {
-            document.querySelector('.bottom-bar').style.display = 'none';
-            alert("🚫 Your account is blocked due to penalty. You cannot request new rides.");
+            // Prefill phone if available
+            if (riderUser.phone) {
+                document.getElementById('inp-phone').value = riderUser.phone;
+            }
+
+            // 🔒 STRICT PENALTY BLOCK ENFORCEMENT (REALTIME) + no alert spam + restore button if unblocked
+            db.ref('users/' + riderUser.id + '/isBlocked').on('value', snap => {
+                const blocked = (snap.val() === true);
+                const bar = document.querySelector('.bottom-bar');
+                if (bar) bar.style.display = blocked ? 'none' : 'block';
+
+                if (blocked && !blockAlertShown) {
+                    blockAlertShown = true;
+                    alert("🚫 Your account is blocked due to penalty. You cannot request new rides.");
+                }
+                if (!blocked) {
+                    blockAlertShown = false;
+                }
+            });
+
+            // ✅ Load active ride list (always visible for cancel/delete)
+            loadMyActiveRequests();
         }
-    });
-
-    // ✅ Load active ride list (always visible for cancel/delete)
-    loadMyActiveRequests();
-}
-
 
         // --- SELECT VEHICLE ---
         function selectVehicle(id, elementId) {
@@ -195,128 +208,127 @@ function initApp(user) {
             document.getElementById(elementId).classList.add('selected');
         }
 
-       // --- SUBMIT PROCESS ---
-function startRequestProcess() {
-    // Check blocked status first
-    db.ref('users/' + riderUser.id + '/isBlocked').once('value', snap => {
-        if (snap.val() === true) {
-            return alert("🚫 You are blocked from making new requests due to previous penalty unpaid.");
-        }
+        // --- SUBMIT PROCESS ---
+        function startRequestProcess() {
+            // Check blocked status first
+            db.ref('users/' + riderUser.id + '/isBlocked').once('value', snap => {
+                if (snap.val() === true) {
+                    return alert("🚫 You are blocked from making new requests due to previous penalty unpaid.");
+                }
 
-        const pickup = document.getElementById('inp-pickup').value;
-        const drop = document.getElementById('inp-drop').value;
-        const phone = document.getElementById('inp-phone').value;
+                const pickup = document.getElementById('inp-pickup').value;
+                const drop = document.getElementById('inp-drop').value;
+                const phone = document.getElementById('inp-phone').value;
 
-        if (!pickup || !drop || !phone) return alert("Please fill all fields.");
-        if (!riderVehicle) return alert("Please select a Vehicle Type.");
+                if (!pickup || !drop || !phone) return alert("Please fill all fields.");
+                if (!riderVehicle) return alert("Please select a Vehicle Type.");
 
-        isRiderProcessing = true;
-        document.getElementById('loading-overlay').style.display = 'flex';
-        document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
-        document.getElementById('cancel-gps-btn').style.display = 'block';
+                isRiderProcessing = true;
+                document.getElementById('loading-overlay').style.display = 'flex';
+                document.getElementById('loading-text').innerText = "🛰️ Acquiring GPS...";
+                document.getElementById('cancel-gps-btn').style.display = 'block';
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    if (!isRiderProcessing) return;
-                    document.getElementById('loading-text').innerText = "✅ GPS Found! Checking active ride...";
-                    sendToBackend(position.coords.latitude, position.coords.longitude);
-                },
-                () => {
-                    if (!isRiderProcessing) return;
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            if (!isRiderProcessing) return;
+                            document.getElementById('loading-text').innerText = "✅ GPS Found! Checking active ride...";
+                            sendToBackend(position.coords.latitude, position.coords.longitude);
+                        },
+                        () => {
+                            if (!isRiderProcessing) return;
+                            document.getElementById('loading-overlay').style.display = 'none';
+                            alert("⚠️ Weak GPS Signal! Move outdoors.");
+                        },
+                        { timeout: 15000, enableHighAccuracy: true }
+                    );
+                } else {
+                    alert("GPS not supported.");
                     document.getElementById('loading-overlay').style.display = 'none';
-                    alert("⚠️ Weak GPS Signal! Move outdoors.");
-                },
-                { timeout: 15000, enableHighAccuracy: true }
-            );
-        } else {
-            alert("GPS not supported.");
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-    });
-}
-
-function sendToBackend(lat, lng) {
-
-    // 🔒 ENFORCE ONLY ONE ACTIVE RIDE PER RIDER
-    db.ref('requests')
-        .orderByChild('riderId')
-        .equalTo(riderUser.id)
-        .once('value')
-        .then(snapshot => {
-
-            let hasActive = false;
-
-            snapshot.forEach(child => {
-                const s = child.val().status;
-                if (
-                    s === 'pending' ||
-                    s === 'OFFERS_RECEIVED' ||
-                    s === 'CONFIRMED' ||
-                    s === 'INVESTIGATION'
-                ) {
-                    hasActive = true;
                 }
             });
+        }
 
-            if (hasActive) {
-                isRiderProcessing = false;
-                document.getElementById('loading-overlay').style.display = 'none';
-                alert("⚠️ You already have an active ride. Please cancel or complete it first.");
-                return;
-            }
+        function sendToBackend(lat, lng) {
 
-            // ✅ CREATE REQUEST
-            const requestData = {
-                riderId: riderUser.id,
-                riderName: riderUser.name || 'Rider',
-                riderPhone: document.getElementById('inp-phone').value,
-                pickup: document.getElementById('inp-pickup').value,
-                drop: document.getElementById('inp-drop').value,
-                landmark: document.getElementById('inp-landmark').value,
-                vehicleType: riderVehicle,
-                lat: lat,
-                lng: lng,
-                status: 'pending',
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
+            // 🔒 ENFORCE ONLY ONE ACTIVE RIDE PER RIDER
+            db.ref('requests')
+                .orderByChild('riderId')
+                .equalTo(riderUser.id)
+                .once('value')
+                .then(snapshot => {
 
-            db.ref('requests').push(requestData).then(() => {
-                isRiderProcessing = false;
-                document.getElementById('loading-overlay').style.display = 'none';
-                alert("✅ Request Sent Successfully!");
+                    let hasActive = false;
 
-                document.getElementById('inp-pickup').value = "";
-                document.getElementById('inp-drop').value = "";
-                document.getElementById('inp-landmark').value = "";
-                riderVehicle = null;
-                document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
-            }).catch(error => {
-                alert("Error: " + error.message);
-                cancelProcess();
-            });
-        });
-}
+                    snapshot.forEach(child => {
+                        const s = child.val().status;
+                        if (
+                            s === 'pending' ||
+                            s === 'OFFERS_RECEIVED' ||
+                            s === 'CONFIRMED' ||
+                            s === 'INVESTIGATION'
+                        ) {
+                            hasActive = true;
+                        }
+                    });
 
-function cancelProcess() {
-    isRiderProcessing = false;
-    document.getElementById('loading-overlay').style.display = 'none';
-}
+                    if (hasActive) {
+                        isRiderProcessing = false;
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        alert("⚠️ You already have an active ride. Please cancel or complete it first.");
+                        return;
+                    }
 
+                    // ✅ CREATE REQUEST
+                    const requestData = {
+                        riderId: riderUser.id,
+                        riderName: riderUser.name || 'Rider',
+                        riderPhone: document.getElementById('inp-phone').value,
+                        pickup: document.getElementById('inp-pickup').value,
+                        drop: document.getElementById('inp-drop').value,
+                        landmark: document.getElementById('inp-landmark').value,
+                        vehicleType: riderVehicle,
+                        lat: lat,
+                        lng: lng,
+                        status: 'pending',
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    };
+
+                    db.ref('requests').push(requestData).then(() => {
+                        isRiderProcessing = false;
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        alert("✅ Request Sent Successfully!");
+
+                        document.getElementById('inp-pickup').value = "";
+                        document.getElementById('inp-drop').value = "";
+                        document.getElementById('inp-landmark').value = "";
+                        riderVehicle = null;
+                        document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
+                    }).catch(error => {
+                        alert("Error: " + error.message);
+                        cancelProcess();
+                    });
+                });
+        }
+
+        function cancelProcess() {
+            isRiderProcessing = false;
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
 
         // --- LOAD REQUESTS ---
         function loadMyActiveRequests() {
             if(!riderUser || !riderUser.id) return;
-            
+
             db.ref('requests').orderByChild('riderId').equalTo(riderUser.id).on('value', (snap) => {
                 const container = document.getElementById('my-requests-list');
-                
+
                 if(!snap.exists()) {
                     container.innerHTML = '<p style="color:#999; text-align: center; margin-top:20px;">No active requests.</p>';
                     return;
                 }
 
-                container.innerHTML = ''; 
+                container.innerHTML = '';
                 let reqList = [];
                 snap.forEach(child => reqList.push({ key: child.key, data: child.val() }));
                 reqList.reverse();
@@ -324,19 +336,24 @@ function cancelProcess() {
                 let count = 0;
                 reqList.forEach(item => {
                     const req = item.data;
-                    if (req.status === 'COMPLETED') return;// Show Cancelled/Investigation
+
+                    // ✅ guard against missing status (prevents toUpperCase crash)
+                    const status = (req.status || 'pending');
+
+                    // ✅ do not show completed/cancelled in Active list
+                    if (status === 'COMPLETED' || status === 'CANCELLED') return;
 
                     count++;
                     const div = document.createElement('div');
                     div.className = 'req-card';
-                    
+
                     // OPEN DETAILS
                     div.onclick = function() { openRequestDetails(item.key); };
 
-                    // Display correct status
-                    let displayStatus = req.status.toUpperCase();
+                    // Display correct status safely
+                    let displayStatus = status.toUpperCase();
                     // Fallback logic for pending state
-                    if(req.status === 'pending' && req.bids) displayStatus = "OFFERS RECEIVED";
+                    if(status === 'pending' && req.bids) displayStatus = "OFFERS RECEIVED";
 
                     div.innerHTML = `
                         <span class="req-status">${displayStatus}</span>
@@ -365,25 +382,26 @@ function cancelProcess() {
                 const r = snap.val();
                 currentReqData = r;
 
+                // ✅ guard against missing status (prevents toUpperCase crash)
+                const status = (r.status || 'pending');
+
                 // Status Logic
-                let st = r.status.toUpperCase();
-                if(r.status === 'pending' && r.bids) st = "OFFERS RECEIVED";
+                let st = status.toUpperCase();
+                if(status === 'pending' && r.bids) st = "OFFERS RECEIVED";
                 document.getElementById('det-status').innerText = st;
-                
+
                 document.getElementById('det-pickup').innerText = r.pickup;
                 document.getElementById('det-drop').innerText = r.drop;
                 document.getElementById('det-price').innerText = r.agreedPrice ? "Rs. " + r.agreedPrice : "Pending Offer";
 
                 const sectionBids = document.getElementById('section-bids');
                 const sectionConf = document.getElementById('section-confirmed');
-                const btnCancel = document.getElementById('btn-cancel-ride');
 
                 // State Management
-                if(r.status === 'CONFIRMED') {
+                if(status === 'CONFIRMED') {
                     sectionBids.style.display = 'none';
                     sectionConf.style.display = 'block';
-                    // Show driver cancelled message if applicable
-                } else if (r.status === 'CANCELLED') {
+                } else if (status === 'CANCELLED') {
                     sectionBids.style.display = 'none';
                     sectionConf.style.display = 'none';
                     if(r.cancelledBy === 'DRIVER') alert("Driver cancelled the ride. Please request again or choose another offer.");
@@ -421,75 +439,75 @@ function cancelProcess() {
             });
         }
 
-  function acceptOffer(reqId, driverId, price) {
-    if (!confirm("Confirm ride for Rs. " + price + "?")) return;
+        function acceptOffer(reqId, driverId, price) {
+            if (!confirm("Confirm ride for Rs. " + price + "?")) return;
 
-    // 1️⃣ Delete competing bids FIRST
-    db.ref('requests/' + reqId + '/bids').once('value', snap => {
-        snap.forEach(child => {
-            if (child.key !== driverId) {
-                child.ref.remove();
-            }
-        });
-    });
-
-    // 2️⃣ Then confirm the selected driver
-    db.ref('requests/' + reqId).update({
-        status: 'CONFIRMED',
-        selectedDriverId: driverId,
-        agreedPrice: price,
-        confirmedAt: firebase.database.ServerValue.TIMESTAMP
-    });
-}
-
-function triggerCancel() {
-    if (!currentReqData) return;
-    const status = currentReqData.status;
-
-    if (status === 'CONFIRMED') {
-        const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
-        if (confirm(msg)) {
-            const userRef = db.ref('users/' + riderUser.id);
-            userRef.child('balance').once('value', snap => {
-                const currentBal = snap.val() || 0;
-                userRef.update({
-                    balance: currentBal - 300,
-                    isBlocked: true
+            // ✅ sequence delete -> confirm (avoids race condition)
+            db.ref('requests/' + reqId + '/bids').once('value').then(snap => {
+                const deletes = [];
+                snap.forEach(child => {
+                    if (child.key !== driverId) {
+                        deletes.push(child.ref.remove());
+                    }
                 });
+                return Promise.all(deletes);
+            }).then(() => {
+                return db.ref('requests/' + reqId).update({
+                    status: 'CONFIRMED',
+                    selectedDriverId: driverId,
+                    agreedPrice: price,
+                    confirmedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            }).catch(err => {
+                alert("Error confirming offer: " + err.message);
             });
-
-            db.ref('requests/' + currentReqId).update({
-                status: 'CANCELLED',
-                cancelledBy: 'RIDER',
-                cancellationReason: 'CONFIRMED_CANCEL_PENALTY'
-            });
-            closeDetails();
         }
-    } else {
-        if (confirm("Delete this request?")) {
-            db.ref('requests/' + currentReqId).update({
-                status: 'CANCELLED',
-                cancelledBy: 'RIDER'
-            });
-            closeDetails();
+
+        function triggerCancel() {
+            if (!currentReqData) return;
+            const status = currentReqData.status;
+
+            if (status === 'CONFIRMED') {
+                const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
+                if (confirm(msg)) {
+                    const userRef = db.ref('users/' + riderUser.id);
+                    userRef.child('balance').once('value', snap => {
+                        const currentBal = snap.val() || 0;
+                        userRef.update({
+                            balance: currentBal - 300,
+                            isBlocked: true
+                        });
+                    });
+
+                    db.ref('requests/' + currentReqId).update({
+                        status: 'CANCELLED',
+                        cancelledBy: 'RIDER',
+                        cancellationReason: 'CONFIRMED_CANCEL_PENALTY'
+                    });
+                    closeDetails();
+                }
+            } else {
+                if (confirm("Delete this request?")) {
+                    db.ref('requests/' + currentReqId).update({
+                        status: 'CANCELLED',
+                        cancelledBy: 'RIDER'
+                    });
+                    closeDetails();
+                }
+            }
         }
-    }
-}
 
-function closeDetails() {
-    document.getElementById('view-details').style.display = 'none';
-    document.getElementById('view-home').style.display = 'block';
-    if (activeReqRef) activeReqRef.off();
-}
+        function closeDetails() {
+            document.getElementById('view-details').style.display = 'none';
+            document.getElementById('view-home').style.display = 'block';
+            if (activeReqRef) activeReqRef.off();
+        }
 
-function logout() {
-    firebase.auth().signOut();
-    localStorage.removeItem("taxiUser");
-    window.location.href = "index.html";
-}
+        function logout() {
+            auth.signOut();
+            localStorage.removeItem("taxiUser");
+            window.location.href = "index.html";
+        }
     </script>
 </body>
 </html>
-
-
-
