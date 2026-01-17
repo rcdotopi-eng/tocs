@@ -3,35 +3,31 @@
 <head>
     <title>Super Admin - RideLink GEM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    
+
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
-        .admin-header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; }
-        .badge-pending { background-color: #f59e0b; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-active { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .badge-blocked { background-color: #dc2626; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; }
-        .btn-action { font-size: 12px; padding: 5px 10px; margin: 2px; border-radius: 6px; }
-        .nav-tabs .nav-link { color: #64748b; font-weight: 600; cursor: pointer; }
-        .nav-tabs .nav-link.active { color: #1e293b; border-bottom: 3px solid #10b981; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: #1e293b; }
+        body { background:#f0f2f5; font-family:'Segoe UI',sans-serif; }
+        .admin-header { background:#1e293b; color:#fff; padding:15px 25px; display:flex; justify-content:space-between; }
+        .card { border:none; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,.05); }
+        .badge-active { background:#10b981; color:#fff; padding:5px 10px; border-radius:20px; font-size:11px; }
+        .badge-pending { background:#f59e0b; color:#fff; padding:5px 10px; border-radius:20px; font-size:11px; }
+        .badge-blocked { background:#ef4444; color:#fff; padding:5px 10px; border-radius:20px; font-size:11px; }
+        .stat { font-size:28px; font-weight:700; }
+        .nav-link { cursor:pointer; }
     </style>
 </head>
-
 <body>
 
 <!-- LOGIN -->
 <div id="admin-login" class="container text-center" style="margin-top:100px;">
-    <div class="card p-5 mx-auto" style="max-width:400px;">
-        <h3>💎 RideLink GEM</h3>
-        <p>Admin Panel</p>
-        <button class="btn btn-dark btn-block" onclick="adminLogin()">Sign in with Google</button>
+    <div class="card p-4 mx-auto" style="max-width:400px;">
+        <h4>💎 RideLink Admin</h4>
+        <button class="btn btn-dark btn-block mt-3" onclick="adminLogin()">Sign in with Google</button>
         <p id="error-msg" class="text-danger mt-3"></p>
     </div>
 </div>
@@ -39,44 +35,42 @@
 <!-- DASHBOARD -->
 <div id="admin-dashboard" style="display:none;">
     <div class="admin-header">
-        <h5 style="margin:0;">💎 Control Center</h5>
+        <h5>💎 Control Center</h5>
         <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
     </div>
 
     <div class="container mt-4">
 
         <!-- STATS -->
-        <div class="row">
-            <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Drivers</h6><div class="stat-value" id="total-drivers">0</div></div></div>
-            <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-muted small">Riders</h6><div class="stat-value" id="total-riders">0</div></div></div>
-            <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-warning small">Pending</h6><div class="stat-value" id="pending-count">0</div></div></div>
-            <div class="col-md-3"><div class="card p-3 text-center"><h6 class="text-success small">Wallet</h6><div class="stat-value" id="total-wallet">₹ 0</div></div></div>
+        <div class="row text-center">
+            <div class="col-md-3"><div class="card p-3"><small>Drivers</small><div class="stat" id="stat-drivers">0</div></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>Riders</small><div class="stat" id="stat-riders">0</div></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>Pending</small><div class="stat" id="stat-pending">0</div></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>Total Wallet</small><div class="stat" id="stat-wallet">0</div></div></div>
         </div>
 
-        <!-- TABLE -->
-        <div class="card">
-            <div class="card-header bg-white pb-0">
-                <ul class="nav nav-tabs border-0">
+        <!-- TABS -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <ul class="nav nav-tabs">
                     <li class="nav-item"><a class="nav-link active" onclick="switchTab('drivers', this)">🚖 Drivers</a></li>
                     <li class="nav-item"><a class="nav-link" onclick="switchTab('riders', this)">🚶 Riders</a></li>
                 </ul>
             </div>
 
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="pl-4">User</th>
-                                <th>Details</th>
-                                <th>Wallet</th>
-                                <th>Status</th>
-                                <th class="text-right pr-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-body"></tbody>
-                    </table>
-                </div>
+                <table class="table mb-0 table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Details</th>
+                            <th>Wallet</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
             </div>
         </div>
 
@@ -85,128 +79,111 @@
 
 <script src="firebase-init.js"></script>
 <script>
-/* SAFETY */
-if (typeof db === 'undefined') db = firebase.database();
+/* ---------- SAFETY ---------- */
 if (typeof auth === 'undefined') auth = firebase.auth();
+if (typeof db === 'undefined') db = firebase.database();
 
-/* CONFIG */
+/* ---------- CONFIG ---------- */
 const ADMIN_EMAILS = ["rcdotopi@gmail.com"];
 let currentTab = 'drivers';
-let allUsers = {};
+let USERS = {};
 
-/* AUTH */
-window.onload = function () {
-    auth.onAuthStateChanged(user => {
-        if (user && ADMIN_EMAILS.includes(user.email)) {
-            admin-login.style.display = 'none';
-            admin-dashboard.style.display = 'block';
-            loadUsers();
-        } else {
-            admin-login.style.display = 'block';
-            admin-dashboard.style.display = 'none';
-            if (user) error-msg.innerText = "Access Denied";
-        }
-    });
+/* ---------- AUTH ---------- */
+window.adminLogin = function () {
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 };
 
-function adminLogin() {
-    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-}
-function logout() {
+window.logout = function () {
     auth.signOut().then(() => location.reload());
-}
+};
 
-/* DATA */
+auth.onAuthStateChanged(user => {
+    if (user && ADMIN_EMAILS.includes(user.email)) {
+        document.getElementById('admin-login').style.display = 'none';
+        document.getElementById('admin-dashboard').style.display = 'block';
+        loadUsers();
+    } else {
+        document.getElementById('admin-login').style.display = 'block';
+        document.getElementById('admin-dashboard').style.display = 'none';
+        if (user) document.getElementById('error-msg').innerText = "Access denied";
+    }
+});
+
+/* ---------- DATA ---------- */
 function loadUsers() {
     db.ref('users').on('value', snap => {
-        allUsers = snap.val() || {};
-        renderTable();
+        USERS = snap.val() || {};
         updateStats();
+        renderTable();
     });
 }
 
-/* TAB SWITCH */
-function switchTab(tab, el) {
+/* ---------- UI ---------- */
+window.switchTab = function(tab, el) {
     currentTab = tab;
     document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     renderTable();
-}
+};
 
-/* RENDER */
 function renderTable() {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
 
-    Object.keys(allUsers).forEach(uid => {
-        const u = allUsers[uid];
-        let show = false;
+    Object.entries(USERS).forEach(([uid, u]) => {
+        if (!u.role) return;
 
-        // ✅ DRIVER DETECTION
-        if (currentTab === 'drivers' && (u.driverStatus || u.vehicleType)) show = true;
+        if (currentTab === 'drivers' && u.role !== 'driver') return;
+        if (currentTab === 'riders' && u.role !== 'rider') return;
 
-        // ✅ RIDER DETECTION (FIXED)
-        if (currentTab === 'riders' && !u.vehicleType && !u.driverStatus) show = true;
-
-        if (!show) return;
-
-        const status =
-            currentTab === 'drivers'
-                ? (u.driverStatus || 'pending')
-                : (u.riderStatus || 'active');
-
+        const status = u.driverStatus || u.riderStatus || 'pending';
         const badge =
             status === 'active' ? 'badge-active' :
-            status === 'blocked' ? 'badge-blocked' :
-            'badge-pending';
+            status === 'blocked' ? 'badge-blocked' : 'badge-pending';
 
-        const details = currentTab === 'drivers'
-            ? `<small>CNIC: ${u.cnic || '-'}<br>Vehicle: ${u.vehicleType || '-'} (${u.vehiclePlate || '-'})</small>`
-            : `<small>Phone: ${u.phone || '-'}</small>`;
+        const details = u.role === 'driver'
+            ? `Vehicle: ${u.vehicleType || '-'}<br>Plate: ${u.vehiclePlate || '-'}`
+            : `Phone: ${u.phone || '-'}`;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="pl-4"><strong>${u.name || 'Unknown'}</strong><br><small>${u.email || ''}</small></td>
-            <td>${details}</td>
-            <td class="${u.wallet < 0 ? 'text-danger' : 'text-success'}">₹ ${u.wallet || 0}</td>
-            <td><span class="${badge}">${status.toUpperCase()}</span></td>
-            <td class="text-right pr-4">
-                <button class="btn btn-light btn-action" onclick="editWallet('${uid}', ${u.wallet || 0})">💰</button>
-                <button class="btn btn-danger btn-action" onclick="blockUser('${uid}', '${currentTab}')">🚫</button>
-                <button class="btn btn-secondary btn-action" onclick="deleteUser('${uid}')">🗑</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${u.name || 'N/A'}</strong><br><small>${u.email || ''}</small></td>
+                <td>${details}</td>
+                <td>₹ ${u.wallet || 0}</td>
+                <td><span class="${badge}">${status.toUpperCase()}</span></td>
+                <td class="text-right">
+                    <button class="btn btn-sm btn-outline-danger" onclick="blockUser('${uid}')">🚫</button>
+                    <button class="btn btn-sm btn-outline-dark" onclick="deleteUser('${uid}')">🗑</button>
+                </td>
+            </tr>`;
     });
 }
 
-/* STATS */
+/* ---------- STATS ---------- */
 function updateStats() {
     let d=0,r=0,p=0,w=0;
-    Object.values(allUsers).forEach(u=>{
-        if(u.vehicleType) d++;
-        else r++;
-        if(u.driverStatus==='pending'||u.riderStatus==='pending') p++;
-        w+=parseInt(u.wallet)||0;
+    Object.values(USERS).forEach(u=>{
+        if(u.role==='driver') d++;
+        if(u.role==='rider') r++;
+        if((u.driverStatus||u.riderStatus)==='pending') p++;
+        w+=u.wallet||0;
     });
-    total-drivers.innerText=d;
-    total-riders.innerText=r;
-    pending-count.innerText=p;
-    total-wallet.innerText="₹ "+w.toLocaleString();
+    stat-drivers.innerText=d;
+    stat-riders.innerText=r;
+    stat-pending.innerText=p;
+    stat-wallet.innerText=w;
 }
 
-/* ACTIONS */
-function editWallet(uid, cur) {
-    let v = prompt("Wallet amount", cur);
-    if (v !== null) db.ref('users/'+uid).update({wallet: parseInt(v)});
-}
-function blockUser(uid, type) {
+/* ---------- ACTIONS ---------- */
+window.blockUser = uid => {
     if(confirm("Block user?"))
-        db.ref('users/'+uid).update({ [type==='drivers'?'driverStatus':'riderStatus']:'blocked' });
-}
-function deleteUser(uid) {
-    if(confirm("Delete permanently?")) db.ref('users/'+uid).remove();
-}
+        db.ref(`users/${uid}`).update({ driverStatus:'blocked', riderStatus:'blocked' });
+};
+
+window.deleteUser = uid => {
+    if(confirm("Delete user permanently?"))
+        db.ref(`users/${uid}`).remove();
+};
 </script>
 </body>
 </html>
