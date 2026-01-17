@@ -13,39 +13,22 @@
 
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 90px; }
-        
-        /* HEADER */
         .page-header { background: #28a745; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        
-        /* REQUEST CARDS */
         .req-card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ffc107; }
         .req-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
         .badge-vehicle { background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; }
-        
-        /* INPUTS */
         .bid-controls { display: flex; gap: 10px; margin-top: 10px; }
         .bid-input { width: 60%; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; }
         .btn-bid { width: 40%; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; }
-        
-        /* MAP BUTTON */
-        .btn-map { 
-            display: block; width: 100%; text-align: center; 
-            background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; 
-            padding: 8px; border-radius: 8px; margin-bottom: 10px; 
-            font-weight: bold; font-size: 13px; text-decoration: none;
-        }
-        .btn-map:hover { text-decoration: none; background: #cfe2ff; color: #0056b3; }
-
-        /* BOTTOM NAV */
+        .btn-map { display: block; width: 100%; text-align: center; background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 13px; text-decoration: none; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
         .nav-item { font-size: 12px; color: #999; cursor: pointer; text-align: center; }
         .nav-item.active { color: #28a745; font-weight: bold; }
-
-        /* GPS STATUS BAR */
         .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; }
-
-        /* AUTH OVERLAY (HIDDEN BY DEFAULT) */
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; }
+        .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
+        
+        /* SECURITY FIX: Overlay is VISIBLE (flex) by default. Hidden only via JS on auth success. */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
     </style>
 </head>
 <body>
@@ -76,77 +59,77 @@
         <div id="my-rides-list"></div>
     </div>
 
+    <div id="tab-history" class="container mt-3" style="display:none;">
+        <h6 class="text-muted" style="font-size:12px; font-weight:700;">COMPLETED RIDES</h6>
+        <div id="history-list"></div>
+    </div>
+
     <div class="bottom-nav">
         <div class="nav-item active" id="btn-tab-new" onclick="switchTab('new')">
-            <span style="font-size:20px; display:block;">📡</span> New Jobs
+            <span style="font-size:20px; display:block;">📡</span> New
         </div>
         <div class="nav-item" id="btn-tab-my" onclick="switchTab('my')">
-            <span style="font-size:20px; display:block;">✅</span> My Rides
+            <span style="font-size:20px; display:block;">✅</span> Active
+        </div>
+        <div class="nav-item" id="btn-tab-history" onclick="switchTab('history')">
+            <span style="font-size:20px; display:block;">📜</span> History
         </div>
     </div>
 
     <script src="firebase-init.js"></script>
     <script>
-        // FIXED: Removed 'db' and 'auth' from declaration since they exist in firebase-init.js
         let driverUser;
         let myLat = 0, myLng = 0;
         let gpsInterval = null;
 
         window.onload = function() {
-            // Safety Check: If firebase-init.js failed to load variables
             if (typeof db === 'undefined' || typeof auth === 'undefined') {
-                console.error("Firebase Init Failed. Creating fallback connection...");
-                // Fallback (just in case)
                 db = firebase.database();
                 auth = firebase.auth();
             }
 
+            // AUTH LISTENER
             auth.onAuthStateChanged(user => {
                 if(user) {
-                    // USER IS LOGGED IN
+                    // 1. UNLOCK APP: Hide Overlay ONLY when user is confirmed
                     document.getElementById('auth-overlay').style.display = 'none';
-
+                    
                     const stored = localStorage.getItem("driverUser");
                     if(stored) {
                         driverUser = JSON.parse(stored);
-                        driverUser.id = user.uid; // Ensure ID matches auth
+                        driverUser.id = user.uid;
                     } else {
-                        // Fallback if no local data
                         driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
                     }
-                    
-                    // 1. Start 30s GPS Loop
+
                     startGpsTracking();
-                    
-                    // 2. Start Listening for Orders
-                    listenForRequests();
+
+                    db.ref('users/' + user.uid).once('value').then(snap => {
+                        if(snap.exists()) {
+                            const dbProfile = snap.val();
+                            driverUser = { ...dbProfile, id: user.uid };
+                            localStorage.setItem("driverUser", JSON.stringify(driverUser));
+                        }
+                        listenForRequests();
+                    });
+
                 } else {
-                    // USER IS NOT LOGGED IN
-                    // FIX: Show overlay instead of redirecting to prevent loop
+                    // 2. LOCK APP: Ensure Overlay is Visible if not logged in
                     document.getElementById('auth-overlay').style.display = 'flex';
                 }
             });
         };
 
-        // --- NEW LOGIN FUNCTION ---
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then((result) => {
-                // The page will automatically handle the user state change
-            }).catch((error) => {
-                alert("Login Failed: " + error.message);
-            });
+            auth.signInWithPopup(provider).then(() => {
+                // Page will auto-reload via onAuthStateChanged and hide overlay
+            }).catch((e) => alert(e.message));
         }
 
-        // --- FEATURE: 30-SECOND GPS UPDATE ---
         function startGpsTracking() {
-            // Run immediately once
             updateLocation();
-            
-            // Then run every 30 seconds
-            gpsInterval = setInterval(() => {
-                updateLocation();
-            }, 30000); // 30,000 ms = 30 seconds
+            gpsInterval = setInterval(() => { updateLocation(); }, 30000);
         }
 
         function updateLocation() {
@@ -155,58 +138,56 @@
                     (pos) => {
                         myLat = pos.coords.latitude;
                         myLng = pos.coords.longitude;
-                        
-                        // Update UI
                         document.getElementById('gps-indicator').innerText = "📡 GPS: Active";
                         document.getElementById('gps-indicator').style.background = "rgba(255,255,255,0.3)";
-
-                        // Send to Firebase
+                        
                         db.ref('users/' + driverUser.id + '/location').update({
-                            lat: myLat,
-                            lng: myLng,
-                            timestamp: Date.now()
+                            lat: myLat, lng: myLng, timestamp: Date.now()
                         });
+                        listenForRequests(); 
                     },
                     (err) => {
-                        console.warn("GPS Error:", err);
                         document.getElementById('gps-indicator').innerText = "⚠️ GPS: Weak";
+                        listenForRequests(); 
                     },
                     { enableHighAccuracy: true }
                 );
             }
         }
 
-        // --- MATH: CALCULATE DISTANCE (Haversine Formula) ---
         function getDistance(lat1, lon1, lat2, lon2) {
             if(!lat1 || !lon1 || !lat2 || !lon2) return 9999; 
-            
-            const R = 6371; // Earth radius km
-            const dLat = deg2rad(lat2 - lat1);
-            const dLon = deg2rad(lon2 - lon1);
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI/180);
+            const dLon = (lon2 - lon1) * (Math.PI/180);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            const d = R * c; 
-            return d;
+            return R * c; 
         }
 
-        function deg2rad(deg) {
-            return deg * (Math.PI/180);
-        }
-
-        // --- MAIN LOGIC ---
         function listenForRequests() {
+            db.ref('requests').off(); 
+
             db.ref('requests').on('value', snap => {
                 const newList = document.getElementById('new-requests-list');
                 const myList = document.getElementById('my-rides-list');
+                const historyList = document.getElementById('history-list');
                 
-                newList.innerHTML = '';
-                myList.innerHTML = '';
-
                 if(!snap.exists()) {
                     newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
                     return;
+                }
+
+                if(myLat === 0 && myLng === 0) {
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
+                } else {
+                    newList.innerHTML = ''; 
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
                 }
 
                 const requests = [];
@@ -219,129 +200,128 @@
                     const r = item.v;
                     const reqId = item.k;
 
-                    if(r.status === 'cancelled' || r.status === 'completed' || r.status === 'deleted') return;
+                    if(r.status === 'COMPLETED' && r.selectedDriverId === driverUser.id) {
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.style.borderLeft = "5px solid #6c757d";
+                        div.innerHTML = `<h5>${r.drop}</h5><p class="mb-0">Fare: Rs. ${r.agreedPrice}</p><small class="text-muted">Completed</small>`;
+                        historyList.appendChild(div);
+                        return;
+                    }
 
-                    // --- SECTION 1: MY ACTIVE RIDES ---
-                    if(r.status === 'confirmed' && r.selectedDriverId === driverUser.id) {
+                    if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
                         const div = document.createElement('div');
                         div.className = 'req-card';
                         div.style.borderLeft = "5px solid #28a745";
                         
-                        // MAP LINK FOR CONFIRMED RIDE
                         const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
 
                         div.innerHTML = `
                             <div class="alert alert-success p-2"><strong>✅ RIDE CONFIRMED!</strong></div>
                             <h5>${r.drop}</h5>
-                            <p class="text-muted mb-1">Pickup: ${r.pickup}</p>
                             <p class="text-muted mb-1">Pass: ${r.riderName} <br> <a href="tel:${r.riderPhone}">${r.riderPhone}</a></p>
-                            
-                            <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate to Passenger</a>
-
                             <h4 class="text-success mt-2">Rs. ${r.agreedPrice}</h4>
-                            <button class="btn btn-outline-success btn-block mt-2" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
+                            <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate</a>
+                            
+                            <button class="btn-action" style="background:#007bff;" onclick="sendDriverUpdate('${reqId}')">🔔 Notify: Arriving</button>
+                            <button class="btn-action" style="background:#28a745;" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
+                            <button class="btn-action" style="background:#ffc107; color:black;" onclick="reportNoShow('${reqId}')">⚠️ Rider No-Show</button>
+                            <button class="btn-action" style="background:#dc3545;" onclick="cancelRide('${reqId}')">🚫 Cancel Ride</button>
                         `;
                         myList.appendChild(div);
                         return; 
                     }
 
-                    // --- SECTION 2: NEW JOBS (WITH FILTERS) ---
-                    if(r.status === 'pending') {
+                    if(r.status === 'CANCELLED' && r.cancelledBy === 'RIDER' && r.bids && r.bids[driverUser.id]) {
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.style.borderLeft = "5px solid #dc3545";
+                        div.innerHTML = `<p class="mb-0"><strong>Ride Cancelled by Rider.</strong><br>Stay motivated — new rides will come soon!</p>`;
+                        myList.appendChild(div);
+                        return;
+                    }
+
+                    if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
+                        if(driverUser.vehicleType && r.vehicleType && driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
                         
-                        // FILTER A: VEHICLE TYPE
-                        if(driverUser.vehicleType && r.vehicleType) {
-                            if(driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) {
-                                return; 
-                            }
-                        }
-
-                        // FILTER B: DISTANCE (5KM)
                         if(myLat === 0 || myLng === 0) return; 
-
+                        
                         const dist = getDistance(myLat, myLng, r.lat, r.lng);
                         if(dist > 5.0) return; 
 
                         newCount++;
+                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
+                        const myBid = (r.bids && r.bids[driverUser.id]);
+                        
+                        let bidHtml = myBid 
+                            ? `<div class="alert alert-warning p-2 mt-2" style="font-size:12px;">⏳ You offered: <strong>Rs. ${myBid.price}</strong></div>`
+                            : `<div class="bid-controls"><input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)"><button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button></div>`;
+
                         const div = document.createElement('div');
                         div.className = 'req-card';
-                        
-                        // MAP LINK FOR NEW JOB
-                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
-
-                        const myBid = (r.bids && r.bids[driverUser.id]);
-                        let bidHtml = '';
-
-                        if(myBid) {
-                            bidHtml = `<div class="alert alert-warning p-2 mt-2" style="font-size:12px;">⏳ You offered: <strong>Rs. ${myBid.price}</strong></div>`;
-                        } else {
-                            bidHtml = `
-                                <div class="bid-controls">
-                                    <input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)">
-                                    <button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button>
-                                </div>
-                            `;
-                        }
-
                         div.innerHTML = `
-                            <div class="req-header">
-                                <span class="badge-vehicle">${r.vehicleType.toUpperCase()}</span>
-                                <span style="font-size:11px; color:#28a745;">${dist.toFixed(1)} km away</span>
-                            </div>
-                            <h5 style="margin-bottom:5px;">${r.drop}</h5>
-                            <p style="font-size:13px; color:#666; margin-bottom:10px;">From: ${r.pickup}</p>
-                            
-                            <a href="${mapLink}" target="_blank" class="btn-map" style="font-size:11px; padding:5px;">📍 See Location on Map</a>
-
-                            ${bidHtml}
+                            <div class="req-header"><span class="badge-vehicle">${(r.vehicleType||'TAXI').toUpperCase()}</span><span style="font-size:11px; color:#28a745;">${dist.toFixed(1)} km away</span></div>
+                            <h5 style="margin-bottom:5px;">${r.drop}</h5><p style="font-size:13px; color:#666; margin-bottom:10px;">From: ${r.pickup}</p>
+                            <a href="${mapLink}" target="_blank" class="btn-map" style="font-size:11px; padding:5px;">📍 Map</a>${bidHtml}
                         `;
                         newList.appendChild(div);
                     }
                 });
 
-                if(newCount === 0) {
-                    if(myLat === 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">Waiting for GPS...</p>';
-                    else newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No jobs within 5km matching your vehicle.</p>';
-                }
+                if(newCount === 0 && myLat !== 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No jobs within 5km.</p>';
             });
         }
 
         function sendOffer(reqId) {
             const price = document.getElementById('price-' + reqId).value;
-            if(!price) return alert("Please enter a price.");
-
+            if(!price) return alert("Enter price");
             const bidData = {
-                driverId: driverUser.id,
-                driverName: driverUser.name || "Driver",
-                vehicleModel: (driverUser.vehicleType || "Taxi") + " " + (driverUser.vehicleColor || ""),
-                vehiclePlate: driverUser.vehiclePlate || "ABC-000",
-                price: price,
-                timestamp: Date.now()
+                driverId: driverUser.id, driverName: driverUser.name,
+                vehicleModel: driverUser.vehicleType, vehiclePlate: driverUser.vehiclePlate || "ABC-000",
+                price: price, timestamp: Date.now()
             };
+            db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData);
+            db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' });
+        }
 
-            db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData).then(() => {
-                alert("Offer Sent!");
-            });
+        function sendDriverUpdate(reqId) {
+            if(confirm("Notify rider you are arriving?")) {
+                db.ref(`requests/${reqId}`).update({ driverStatus: 'Reaching in 5-10 minutes' });
+                alert("Rider notified.");
+            }
         }
 
         function completeRide(reqId) {
-            if(confirm("Ride Finished?")) {
-                db.ref(`requests/${reqId}`).update({ status: 'completed' });
+            if(confirm("Ride Finished?")) db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
+        }
+
+        function reportNoShow(reqId) {
+            if(confirm("Report Rider No-Show?")) {
+                db.ref(`requests/${reqId}`).update({ status: 'INVESTIGATION', cancelledBy: 'DRIVER', cancellationReason: 'RIDER_NO_SHOW' });
+                alert("Report submitted.");
+            }
+        }
+
+        function cancelRide(reqId) {
+            const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
+            if(confirm(msg)) {
+                const userRef = db.ref('users/' + driverUser.id);
+                userRef.child('balance').once('value', snap => {
+                    const bal = snap.val() || 0;
+                    userRef.update({ balance: bal - 300, isBlocked: true });
+                });
+                db.ref(`requests/${reqId}`).update({ status: 'CANCELLED', cancelledBy: 'DRIVER', cancellationReason: 'CONFIRMED_CANCEL_PENALTY' });
             }
         }
 
         function switchTab(tab) {
-            document.getElementById('tab-new').style.display = 'none';
-            document.getElementById('tab-my').style.display = 'none';
-            document.getElementById('btn-tab-new').classList.remove('active');
-            document.getElementById('btn-tab-my').classList.remove('active');
-
-            document.getElementById('tab-' + tab).style.display = 'block';
-            document.getElementById('btn-tab-' + tab).classList.add('active');
+            ['new', 'my', 'history'].forEach(t => {
+                document.getElementById('tab-'+t).style.display = (t===tab) ? 'block' : 'none';
+                document.getElementById('btn-tab-'+t).classList.toggle('active', t===tab);
+            });
         }
 
-        function logout() {
-            auth.signOut().then(() => window.location.href="index.html");
-        }
+        function logout() { auth.signOut().then(() => window.location.href="index.html"); }
     </script>
 </body>
 </html>
