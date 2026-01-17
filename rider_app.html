@@ -147,32 +147,46 @@
         let currentReqData = null;
 
         // --- INIT ---
-        window.onload = function() {
-            if(firebase.auth().currentUser) {
-                initApp(firebase.auth().currentUser);
-            } else {
-                firebase.auth().onAuthStateChanged(user => {
-                    if(user) initApp(user);
-                    else window.location.href = "index.html";
-                });
-            }
-        };
-
-        function initApp(user) {
-            const saved = localStorage.getItem("taxiUser");
-            if (saved) {
-                riderUser = JSON.parse(saved);
-                riderUser.id = user.uid;
-            } else {
-                riderUser = { id: user.uid, name: user.displayName || 'Rider', phone: '' };
-            }
-
-            if(riderUser.phone) {
-                document.getElementById('inp-phone').value = riderUser.phone;
-            }
-
-            loadMyActiveRequests();
+window.onload = function() {
+    firebase.auth().onAuthStateChanged(user => {
+        if (!user) {
+            window.location.href = "index.html";
+            return;
         }
+        initApp(user);
+    });
+};
+
+function initApp(user) {
+    const saved = localStorage.getItem("taxiUser");
+    if (saved) {
+        riderUser = JSON.parse(saved);
+        riderUser.id = user.uid;
+    } else {
+        riderUser = {
+            id: user.uid,
+            name: user.displayName || 'Rider',
+            phone: ''
+        };
+    }
+
+    // Prefill phone if available
+    if (riderUser.phone) {
+        document.getElementById('inp-phone').value = riderUser.phone;
+    }
+
+    // 🔒 STRICT PENALTY BLOCK ENFORCEMENT (REALTIME)
+    db.ref('users/' + riderUser.id + '/isBlocked').on('value', snap => {
+        if (snap.val() === true) {
+            document.querySelector('.bottom-bar').style.display = 'none';
+            alert("🚫 Your account is blocked due to penalty. You cannot request new rides.");
+        }
+    });
+
+    // ✅ Load active ride list (always visible for cancel/delete)
+    loadMyActiveRequests();
+}
+
 
         // --- SELECT VEHICLE ---
         function selectVehicle(id, elementId) {
@@ -310,7 +324,7 @@ function cancelProcess() {
                 let count = 0;
                 reqList.forEach(item => {
                     const req = item.data;
-                    if(req.status === 'deleted' || req.status === 'completed') return; // Show Cancelled/Investigation
+                    if (req.status === 'COMPLETED') return;// Show Cancelled/Investigation
 
                     count++;
                     const div = document.createElement('div');
@@ -407,74 +421,74 @@ function cancelProcess() {
             });
         }
 
-        function acceptOffer(reqId, driverId, price) {
-            if(!confirm("Confirm ride for Rs. " + price + "?")) return;
-            
-            // 1. Update Request
-            db.ref('requests/' + reqId).update({
-                status: 'CONFIRMED',
-                selectedDriverId: driverId,
-                agreedPrice: price,
-                confirmedAt: firebase.database.ServerValue.TIMESTAMP
-            });
+  function acceptOffer(reqId, driverId, price) {
+    if (!confirm("Confirm ride for Rs. " + price + "?")) return;
 
-            // 2. Delete other bids (Read first then delete non-matches)
-            db.ref('requests/' + reqId + '/bids').once('value', snap => {
-                snap.forEach(child => {
-                    if(child.key !== driverId) {
-                        child.ref.remove();
-                    }
+    // 1️⃣ Delete competing bids FIRST
+    db.ref('requests/' + reqId + '/bids').once('value', snap => {
+        snap.forEach(child => {
+            if (child.key !== driverId) {
+                child.ref.remove();
+            }
+        });
+    });
+
+    // 2️⃣ Then confirm the selected driver
+    db.ref('requests/' + reqId).update({
+        status: 'CONFIRMED',
+        selectedDriverId: driverId,
+        agreedPrice: price,
+        confirmedAt: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+function triggerCancel() {
+    if (!currentReqData) return;
+    const status = currentReqData.status;
+
+    if (status === 'CONFIRMED') {
+        const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
+        if (confirm(msg)) {
+            const userRef = db.ref('users/' + riderUser.id);
+            userRef.child('balance').once('value', snap => {
+                const currentBal = snap.val() || 0;
+                userRef.update({
+                    balance: currentBal - 300,
+                    isBlocked: true
                 });
             });
+
+            db.ref('requests/' + currentReqId).update({
+                status: 'CANCELLED',
+                cancelledBy: 'RIDER',
+                cancellationReason: 'CONFIRMED_CANCEL_PENALTY'
+            });
+            closeDetails();
         }
-
-        function triggerCancel() {
-            if(!currentReqData) return;
-            const status = currentReqData.status;
-
-            if(status === 'CONFIRMED') {
-                // PENALTY LOGIC
-                const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
-                if(confirm(msg)) {
-                    // Deduct Balance & Block
-                    const userRef = db.ref('users/' + riderUser.id);
-                    userRef.child('balance').once('value', snap => {
-                        const currentBal = snap.val() || 0;
-                        userRef.update({
-                            balance: currentBal - 300,
-                            isBlocked: true
-                        });
-                    });
-
-                    // Cancel Request
-                    db.ref('requests/' + currentReqId).update({
-                        status: 'CANCELLED',
-                        cancelledBy: 'RIDER',
-                        cancellationReason: 'CONFIRMED_CANCEL_PENALTY'
-                    });
-                    closeDetails();
-                }
-            } else {
-                // No Penalty
-                if(confirm("Delete this request?")) {
-                    db.ref('requests/' + currentReqId).update({ status: 'CANCELLED', cancelledBy: 'RIDER' });
-                    closeDetails();
-                }
-            }
+    } else {
+        if (confirm("Delete this request?")) {
+            db.ref('requests/' + currentReqId).update({
+                status: 'CANCELLED',
+                cancelledBy: 'RIDER'
+            });
+            closeDetails();
         }
+    }
+}
 
-        function closeDetails() {
-            document.getElementById('view-details').style.display = 'none';
-            document.getElementById('view-home').style.display = 'block';
-            if(activeReqRef) activeReqRef.off();
-        }
+function closeDetails() {
+    document.getElementById('view-details').style.display = 'none';
+    document.getElementById('view-home').style.display = 'block';
+    if (activeReqRef) activeReqRef.off();
+}
 
-        function logout() {
-            firebase.auth().signOut();
-            localStorage.removeItem("taxiUser");
-            window.location.href = "index.html";
-        }
+function logout() {
+    firebase.auth().signOut();
+    localStorage.removeItem("taxiUser");
+    window.location.href = "index.html";
+}
     </script>
 </body>
 </html>
+
 
