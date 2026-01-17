@@ -74,29 +74,39 @@
         let gpsInterval = null;
 
         window.onload = function() {
-            // Safety Check for SDK
-            if (typeof db === 'undefined' || typeof auth === 'undefined') {
-                db = firebase.database();
-                auth = firebase.auth();
+    // Safety Check for SDK
+    if (typeof db === 'undefined' || typeof auth === 'undefined') {
+        db = firebase.database();
+        auth = firebase.auth();
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        // Load driver profile FIRST
+        db.ref('users/' + user.uid).once('value').then(snap => {
+            if (!snap.exists()) {
+                alert("Driver profile not found.");
+                auth.signOut();
+                window.location.href = "index.html";
+                return;
             }
 
-            auth.onAuthStateChanged(user => {
-                if(user) {
-                    const stored = localStorage.getItem("driverUser");
-                    if(stored) {
-                        driverUser = JSON.parse(stored);
-                        driverUser.id = user.uid; 
-                    } else {
-                        driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
-                    }
-                    
-                    startGpsTracking();
-                    listenForRequests();
-                } else {
-                    window.location.href = "index.html"; 
-                }
-            });
-        };
+            driverUser = snap.val();
+            driverUser.id = user.uid;
+
+            // Optional: keep localStorage in sync
+            localStorage.setItem("driverUser", JSON.stringify(driverUser));
+
+            // SAFE to start now
+            startGpsTracking();
+            listenForRequests();
+        });
+    });
+};
 
         function startGpsTracking() {
             updateLocation();
@@ -290,3 +300,4 @@
     </script>
 </body>
 </html>
+
