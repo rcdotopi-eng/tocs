@@ -26,9 +26,17 @@
         .nav-item.active { color: #28a745; font-weight: bold; }
         .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; }
         .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
+        
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #28a745; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
     </style>
 </head>
 <body>
+
+    <div id="auth-overlay">
+        <h3>🚖 Driver Login</h3>
+        <p>Please log in to access the driver panel.</p>
+        <button class="btn btn-light" onclick="login()">Sign in with Google</button>
+    </div>
 
     <div class="page-header">
         <div>
@@ -81,6 +89,8 @@
 
             auth.onAuthStateChanged(user => {
                 if(user) {
+                    document.getElementById('auth-overlay').style.display = 'none'; // Hide login if active
+                    
                     const stored = localStorage.getItem("driverUser");
                     if(stored) {
                         driverUser = JSON.parse(stored);
@@ -101,10 +111,17 @@
                     });
 
                 } else {
-                    window.location.href = "index.html"; 
+                    document.getElementById('auth-overlay').style.display = 'flex'; // Show login instead of redirecting
                 }
             });
         };
+
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then(() => {
+                // Page will auto-reload via onAuthStateChanged
+            });
+        }
 
         function startGpsTracking() {
             updateLocation();
@@ -127,6 +144,7 @@
                     },
                     (err) => {
                         document.getElementById('gps-indicator').innerText = "⚠️ GPS: Weak";
+                        listenForRequests(); 
                     },
                     { enableHighAccuracy: true }
                 );
@@ -152,13 +170,20 @@
                 const myList = document.getElementById('my-rides-list');
                 const historyList = document.getElementById('history-list');
                 
-                newList.innerHTML = '';
-                myList.innerHTML = '';
-                historyList.innerHTML = '';
-
                 if(!snap.exists()) {
                     newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
                     return;
+                }
+
+                if(myLat === 0 && myLng === 0) {
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
+                } else {
+                    newList.innerHTML = ''; 
+                    myList.innerHTML = '';
+                    historyList.innerHTML = '';
                 }
 
                 const requests = [];
@@ -269,7 +294,7 @@
         function reportNoShow(reqId) {
             if(confirm("Report Rider No-Show?")) {
                 db.ref(`requests/${reqId}`).update({ status: 'INVESTIGATION', cancelledBy: 'DRIVER', cancellationReason: 'RIDER_NO_SHOW' });
-                alert("Your cancellation has been submitted. Admin will investigate this no-show report.");
+                alert("Report submitted.");
             }
         }
 
