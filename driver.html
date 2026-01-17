@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>RideLink GEM - Driver Portal</title>
+    <title>Driver App - RideLink</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#28a745">
     
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
@@ -12,259 +12,292 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; color: #333; }
-        
-        .container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
-        
-        .card { 
-            background: white; width: 100%; max-width: 400px; 
-            padding: 30px; border-radius: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; 
-            margin-bottom: 20px;
-        }
-
-        h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
-        
-        /* Inputs */
-        .input-group { margin-bottom: 15px; text-align: left; width: 100%; }
-        .input-group label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
-        .input-group input, .input-group select { 
-            width: 100%; padding: 12px; border: 1px solid #e2e8f0; 
-            border-radius: 8px; font-size: 16px; background: #f8fafc; 
-            box-sizing: border-box;
-        }
-        .input-group input:focus, .input-group select:focus { border-color: #10b981; outline: none; background: #fff; }
-
-        /* Buttons */
-        .btn-google { 
-            background: white; color: #333; border: 1px solid #cbd5e1; 
-            width: 100%; padding: 12px; border-radius: 10px; font-weight: 600;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: 0.2s;
-        }
-        .btn-google:active { background: #f1f5f9; transform: scale(0.98); }
-
-        .btn-green { 
-            background: #10b981; color: white; border: none; 
-            width: 100%; padding: 14px; border-radius: 10px; 
-            font-size: 16px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-            transition: 0.2s;
-        }
-        .btn-green:active { transform: scale(0.98); }
-
-        .status-box { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 20px 0; text-align: left; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 90px; }
+        .page-header { background: #28a745; color: white; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .req-card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ffc107; }
+        .req-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .badge-vehicle { background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; }
+        .bid-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .bid-input { width: 60%; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; }
+        .btn-bid { width: 40%; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        .btn-map { display: block; width: 100%; text-align: center; background: #e3f2fd; color: #007bff; border: 1px solid #b6d4fe; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 13px; text-decoration: none; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
+        .nav-item { font-size: 12px; color: #999; cursor: pointer; text-align: center; }
+        .nav-item.active { color: #28a745; font-weight: bold; }
+        .gps-status { font-size: 10px; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 20px; }
+        .btn-action { width: 100%; margin-top: 5px; font-size: 14px; padding: 10px; border-radius: 8px; border:none; color:white;}
     </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <div style="font-size: 50px; margin-bottom: 10px;">🚖</div>
-        <h1>RideLink Partner</h1>
-        <p style="color:#64748b; margin-bottom: 30px;">Drive & Earn on your own schedule</p>
-
-        <div id="view-login" class="card">
-            <h3 style="margin-top:0;">Login</h3>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">
-                Sign in to access your dashboard or register as a new driver.
-            </p>
-
-            <button class="btn-google" onclick="loginWithGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                Continue with Google
-            </button>
-            <p id="status-text" style="margin-top: 20px; font-size: 13px; color: #94a3b8; font-weight: 500;"></p>
+    <div class="page-header">
+        <div>
+            <h2 style="margin:0; font-size:18px; font-weight:700;">🚖 Driver Panel</h2>
+            <span id="gps-indicator" class="gps-status">📡 GPS: Initializing...</span>
         </div>
+        <span onclick="logout()" style="color:white; font-size:12px; cursor:pointer;">Logout</span>
+    </div>
 
-        <div id="view-register" class="card" style="display: none;">
-            <h3 style="margin-top:0; color: #10b981;">Driver Registration</h3>
-            <p style="font-size: 13px; color: #64748b;">Complete your profile to get approved.</p>
-            <hr>
-
-            <div class="input-group"><label>Full Name</label><input type="text" id="reg-name"></div>
-            <div class="input-group"><label>Parent/Guardian Name</label><input type="text" id="reg-parent"></div>
-            <div class="input-group"><label>Phone Number</label><input type="tel" id="reg-phone" oninput="formatPhone(this)" placeholder="03xx-xxxxxxx"></div>
-            <div class="input-group"><label>CNIC Number</label><input type="tel" id="reg-cnic" maxlength="15"></div>
-            <div class="input-group"><label>City / Area</label><input type="text" id="reg-address"></div>
-
-            <hr style="margin: 20px 0; border-top: 1px dashed #e2e8f0;">
-
-            <div class="input-group">
-                <label>Vehicle Type</label>
-                <select id="reg-vehicle-type">
-                    <option value="">Select Type...</option>
-                    <option value="bike">Bike 🏍️</option>
-                    <option value="rickshaw">Rickshaw 🛺</option>
-                    <option value="car">Car 🚗</option>
-                    <option value="carry">Carry 🚐</option>
-                    <option value="coaster">Coaster 🚌</option>
-                    <option value="loader">Loader 🚚</option>
-                    <option value="luxury">Luxury Car 🚘</option>
-                </select>
-            </div>
-            <div class="input-group"><label>Vehicle Plate Number</label><input type="text" id="reg-plate" placeholder="ABC-123"></div>
-            <div class="input-group"><label>Vehicle Color</label><input type="text" id="reg-color"></div>
-
-            <div class="status-box">
-                <strong>🎁 Welcome Bonus:</strong><br>
-                Your wallet will be credited with <strong>Rs. 1000</strong> upon registration submission.
-                <br><br>
-                <strong>📞 Support:</strong> 0314-6415764
-            </div>
-
-            <button class="btn-green" onclick="submitRegistration()">Submit Application</button>
+    <div id="tab-new" class="container mt-3">
+        <h6 class="text-muted" style="font-size:12px; font-weight:700;">JOBS NEARBY (5KM)</h6>
+        <div id="new-requests-list">
+            <p class="text-center mt-4" style="color:#999;">Waiting for GPS location...</p>
         </div>
+    </div>
 
-        <div id="view-pending" class="card" style="display: none; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 15px;">⏳</div>
-            <h3 style="color: #d97706;">Verification Pending</h3>
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-                Your documents have been submitted.<br>
-                Admin verification usually takes <strong>2-4 hours</strong>.
-            </p>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #e2e8f0;">
-                <small style="color:#64748b; text-transform: uppercase; font-weight: bold;">Admin Contact</small><br>
-                <strong style="color: #1e293b; font-size: 16px;">0314-6415764</strong>
-            </div>
-            <button onclick="location.reload()" class="btn-google" style="margin-top: 20px; justify-content: center;">
-                Check Status Again
-            </button>
+    <div id="tab-my" class="container mt-3" style="display:none;">
+        <h6 class="text-muted" style="font-size:12px; font-weight:700;">MY ACTIVE RIDES</h6>
+        <div id="my-rides-list"></div>
+    </div>
+
+    <div id="tab-history" class="container mt-3" style="display:none;">
+        <h6 class="text-muted" style="font-size:12px; font-weight:700;">COMPLETED RIDES</h6>
+        <div id="history-list"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="btn-tab-new" onclick="switchTab('new')">
+            <span style="font-size:20px; display:block;">📡</span> New
         </div>
-
+        <div class="nav-item" id="btn-tab-my" onclick="switchTab('my')">
+            <span style="font-size:20px; display:block;">✅</span> Active
+        </div>
+        <div class="nav-item" id="btn-tab-history" onclick="switchTab('history')">
+            <span style="font-size:20px; display:block;">📜</span> History
+        </div>
     </div>
 
     <script src="firebase-init.js"></script>
     <script>
-        let googleUser = null;
-        let existingData = null;
+        let driverUser;
+        let myLat = 0, myLng = 0;
+        let gpsInterval = null;
 
-        // 1. LOGIN FLOW
-        function loginWithGoogle() {
-            const btn = document.querySelector('.btn-google');
-            const txt = document.getElementById('status-text');
-            
-            btn.style.opacity = "0.5"; 
-            btn.style.pointerEvents = "none";
-            txt.innerText = "Connecting to Google...";
+        window.onload = function() {
+            if (typeof db === 'undefined' || typeof auth === 'undefined') {
+                db = firebase.database();
+                auth = firebase.auth();
+            }
 
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
-
-            firebase.auth().signInWithPopup(provider)
-                .then((result) => {
-                    googleUser = result.user;
-                    txt.innerText = "Checking Database...";
-                    checkDatabase(googleUser.uid);
-                })
-                .catch((error) => {
-                    alert("Login Failed: " + error.message);
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                    txt.innerText = "";
-                });
-        }
-
-        // 2. CHECK USER STATUS
-        function checkDatabase(uid) {
-            db.ref('users/' + uid).once('value').then((snapshot) => {
-                document.getElementById('view-login').style.display = 'none';
-
-                if (snapshot.exists()) {
-                    existingData = snapshot.val();
-                    // SAVE ID to local storage explicitly for app usage
-                    existingData.id = uid; 
-                    localStorage.setItem("driverUser", JSON.stringify(existingData));
-
-                    // ROUTING LOGIC
-                    if (existingData.driverStatus === 'active') {
-                        // APPROVED -> Go to App
-                        window.location.href = "driver_app.html";
-                    } else if (existingData.driverStatus === 'pending') {
-                        // PENDING -> Show Wait Screen
-                        document.getElementById('view-pending').style.display = 'block';
+            auth.onAuthStateChanged(user => {
+                if(user) {
+                    // 1. Initial Load from LocalStorage (Fast UI)
+                    const stored = localStorage.getItem("driverUser");
+                    if(stored) {
+                        driverUser = JSON.parse(stored);
+                        driverUser.id = user.uid;
                     } else {
-                        // BLOCKED or Rider trying to become Driver -> Show Form
-                        showRegistration(true);
+                        driverUser = { id: user.uid, name: "Driver", vehicleType: "car", vehiclePlate: "ABC-123" }; 
                     }
+
+                    // 2. Start GPS immediately
+                    startGpsTracking();
+
+                    // FIX: Fetch REAL Profile from DB BEFORE listening
+                    // This ensures we have the correct vehicleType for filtering
+                    db.ref('users/' + user.uid).once('value').then(snap => {
+                        if(snap.exists()) {
+                            const dbProfile = snap.val();
+                            // Merge DB profile with ID
+                            driverUser = { ...dbProfile, id: user.uid };
+                            localStorage.setItem("driverUser", JSON.stringify(driverUser));
+                        }
+                        // 3. ONLY start listening after we have the real profile
+                        listenForRequests();
+                    });
+
                 } else {
-                    // NEW USER -> Show Form
-                    showRegistration(false);
+                    window.location.href = "index.html"; 
                 }
             });
+        };
+
+        function startGpsTracking() {
+            updateLocation();
+            gpsInterval = setInterval(() => { updateLocation(); }, 30000);
         }
 
-        function showRegistration(isUpgrade) {
-            document.getElementById('view-register').style.display = 'block';
-            document.getElementById('reg-name').value = googleUser.displayName || "";
-            
-            // If they were a rider, pre-fill phone
-            if(isUpgrade && existingData && existingData.phone) {
-                document.getElementById('reg-phone').value = existingData.phone;
+        function updateLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        myLat = pos.coords.latitude;
+                        myLng = pos.coords.longitude;
+                        document.getElementById('gps-indicator').innerText = "📡 GPS: Active";
+                        document.getElementById('gps-indicator').style.background = "rgba(255,255,255,0.3)";
+                        
+                        db.ref('users/' + driverUser.id + '/location').update({
+                            lat: myLat, lng: myLng, timestamp: Date.now()
+                        });
+
+                        // Re-trigger listener to apply distance filter
+                        listenForRequests(); 
+                    },
+                    (err) => {
+                        document.getElementById('gps-indicator').innerText = "⚠️ GPS: Weak";
+                    },
+                    { enableHighAccuracy: true }
+                );
             }
         }
 
-        // 3. SUBMIT FORM
-        function submitRegistration() {
-            const name = document.getElementById('reg-name').value;
-            const parent = document.getElementById('reg-parent').value;
-            const phone = document.getElementById('reg-phone').value;
-            const cnic = document.getElementById('reg-cnic').value;
-            const address = document.getElementById('reg-address').value;
-            const vType = document.getElementById('reg-vehicle-type').value;
-            const vPlate = document.getElementById('reg-plate').value;
-            const vColor = document.getElementById('reg-color').value;
+        function getDistance(lat1, lon1, lat2, lon2) {
+            if(!lat1 || !lon1 || !lat2 || !lon2) return 9999; 
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI/180);
+            const dLon = (lon2 - lon1) * (Math.PI/180);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c; 
+        }
 
-            if(!name || !phone || !cnic || !vType || !vPlate) {
-                return alert("Please fill all required fields.");
-            }
+        function listenForRequests() {
+            db.ref('requests').off(); // Detach old listener
 
-            // Wallet Logic: Add 1000 if new driver
-            let currentWallet = (existingData && existingData.wallet) ? parseInt(existingData.wallet) : 0;
-            // Only add bonus if they aren't already a driver (prevent double bonus on profile edit)
-            if(!existingData || !existingData.driverStatus) {
-                currentWallet += 1000;
-            }
-
-            const updates = {
-                id: googleUser.uid, // Ensuring ID is saved in DB
-                name: name,
-                parentName: parent,
-                phone: phone,
-                cnic: cnic,
-                address: address,
-                vehicleType: vType,
-                vehiclePlate: vPlate,
-                vehicleColor: vColor,
-                email: googleUser.email,
-                driverStatus: 'pending', // Send to Pending
-                wallet: currentWallet,
-                role: 'driver', // Mark as driver
-                updatedAt: Date.now()
-            };
-
-            if(!existingData) updates.joined = Date.now();
-
-            db.ref('users/' + googleUser.uid).update(updates).then(() => {
-                // Update Local Storage
-                if(existingData) Object.assign(existingData, updates);
-                else existingData = updates;
+            db.ref('requests').on('value', snap => {
+                const newList = document.getElementById('new-requests-list');
+                const myList = document.getElementById('my-rides-list');
+                const historyList = document.getElementById('history-list');
                 
-                localStorage.setItem("driverUser", JSON.stringify(existingData));
-                
-                // Show Pending Screen
-                document.getElementById('view-register').style.display = 'none';
-                document.getElementById('view-pending').style.display = 'block';
-                window.scrollTo(0,0);
+                newList.innerHTML = '';
+                myList.innerHTML = '';
+                historyList.innerHTML = '';
+
+                if(!snap.exists()) {
+                    newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No requests found.</p>';
+                    return;
+                }
+
+                const requests = [];
+                snap.forEach(c => requests.push({ k: c.key, v: c.val() }));
+                requests.reverse(); 
+
+                let newCount = 0;
+
+                requests.forEach(item => {
+                    const r = item.v;
+                    const reqId = item.k;
+
+                    // HISTORY
+                    if(r.status === 'COMPLETED' && r.selectedDriverId === driverUser.id) {
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.style.borderLeft = "5px solid #6c757d";
+                        div.innerHTML = `<h5>${r.drop}</h5><p class="mb-0">Fare: Rs. ${r.agreedPrice}</p><small class="text-muted">Completed</small>`;
+                        historyList.appendChild(div);
+                        return;
+                    }
+
+                    // ACTIVE RIDES
+                    if(r.status === 'CONFIRMED' && r.selectedDriverId === driverUser.id) {
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.style.borderLeft = "5px solid #28a745";
+                        
+                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
+
+                        div.innerHTML = `
+                            <div class="alert alert-success p-2"><strong>✅ RIDE CONFIRMED!</strong></div>
+                            <h5>${r.drop}</h5>
+                            <p class="text-muted mb-1">Pass: ${r.riderName} <br> <a href="tel:${r.riderPhone}">${r.riderPhone}</a></p>
+                            <h4 class="text-success mt-2">Rs. ${r.agreedPrice}</h4>
+                            <a href="${mapLink}" target="_blank" class="btn-map">📍 Navigate</a>
+                            <button class="btn-action" style="background:#28a745;" onclick="completeRide('${reqId}')">🏁 Finish Ride</button>
+                            <button class="btn-action" style="background:#ffc107; color:black;" onclick="reportNoShow('${reqId}')">⚠️ Rider No-Show</button>
+                            <button class="btn-action" style="background:#dc3545;" onclick="cancelRide('${reqId}')">🚫 Cancel Ride</button>
+                        `;
+                        myList.appendChild(div);
+                        return; 
+                    }
+
+                    // CANCELLED NOTICE
+                    if(r.status === 'CANCELLED' && r.cancelledBy === 'RIDER' && r.bids && r.bids[driverUser.id]) {
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.style.borderLeft = "5px solid #dc3545";
+                        div.innerHTML = `<p class="mb-0"><strong>Ride Cancelled by Rider.</strong><br>Stay motivated — new rides will come soon!</p>`;
+                        myList.appendChild(div);
+                        return;
+                    }
+
+                    // NEW JOBS
+                    if(r.status === 'pending' || r.status === 'OFFERS_RECEIVED') {
+                        // 1. Vehicle Filter (Now uses updated driverUser)
+                        if(driverUser.vehicleType && r.vehicleType && driverUser.vehicleType.toLowerCase() !== r.vehicleType.toLowerCase()) return; 
+                        
+                        // 2. GPS Filter
+                        if(myLat === 0 || myLng === 0) return; 
+                        
+                        const dist = getDistance(myLat, myLng, r.lat, r.lng);
+                        if(dist > 5.0) return; 
+
+                        newCount++;
+                        const mapLink = `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
+                        const myBid = (r.bids && r.bids[driverUser.id]);
+                        
+                        let bidHtml = myBid 
+                            ? `<div class="alert alert-warning p-2 mt-2" style="font-size:12px;">⏳ You offered: <strong>Rs. ${myBid.price}</strong></div>`
+                            : `<div class="bid-controls"><input type="number" id="price-${reqId}" class="bid-input" placeholder="Price (Rs)"><button class="btn-bid" onclick="sendOffer('${reqId}')">Send Offer</button></div>`;
+
+                        const div = document.createElement('div');
+                        div.className = 'req-card';
+                        div.innerHTML = `
+                            <div class="req-header"><span class="badge-vehicle">${(r.vehicleType||'TAXI').toUpperCase()}</span><span style="font-size:11px; color:#28a745;">${dist.toFixed(1)} km away</span></div>
+                            <h5 style="margin-bottom:5px;">${r.drop}</h5><p style="font-size:13px; color:#666; margin-bottom:10px;">From: ${r.pickup}</p>
+                            <a href="${mapLink}" target="_blank" class="btn-map" style="font-size:11px; padding:5px;">📍 Map</a>${bidHtml}
+                        `;
+                        newList.appendChild(div);
+                    }
+                });
+
+                if(newCount === 0 && myLat !== 0) newList.innerHTML = '<p class="text-center mt-4" style="color:#999;">No jobs within 5km.</p>';
             });
         }
 
-        function formatPhone(input) {
-            let v = input.value.replace(/\D/g, ''); 
-            if (v.length > 11) v = v.slice(0, 11);
-            if (v.length > 4) v = v.slice(0, 4) + "-" + v.slice(4);
-            input.value = v;
+        function sendOffer(reqId) {
+            const price = document.getElementById('price-' + reqId).value;
+            if(!price) return alert("Enter price");
+            const bidData = {
+                driverId: driverUser.id, driverName: driverUser.name,
+                vehicleModel: driverUser.vehicleType, vehiclePlate: driverUser.vehiclePlate || "ABC-000",
+                price: price, timestamp: Date.now()
+            };
+            db.ref(`requests/${reqId}/bids/${driverUser.id}`).set(bidData);
+            db.ref(`requests/${reqId}`).update({ status: 'OFFERS_RECEIVED' });
         }
+
+        function completeRide(reqId) {
+            if(confirm("Ride Finished?")) db.ref(`requests/${reqId}`).update({ status: 'COMPLETED' });
+        }
+
+        function reportNoShow(reqId) {
+            if(confirm("Report Rider No-Show?")) {
+                db.ref(`requests/${reqId}`).update({ status: 'INVESTIGATION', cancelledBy: 'DRIVER', cancellationReason: 'RIDER_NO_SHOW' });
+                alert("Report submitted.");
+            }
+        }
+
+        function cancelRide(reqId) {
+            const msg = "cancelling a confirmed offer will fine you 300 rupees , you will not be able to request any furture ride before paying this fine";
+            if(confirm(msg)) {
+                const userRef = db.ref('users/' + driverUser.id);
+                userRef.child('balance').once('value', snap => {
+                    const bal = snap.val() || 0;
+                    userRef.update({ balance: bal - 300, isBlocked: true });
+                });
+                db.ref(`requests/${reqId}`).update({ status: 'CANCELLED', cancelledBy: 'DRIVER', cancellationReason: 'CONFIRMED_CANCEL_PENALTY' });
+            }
+        }
+
+        function switchTab(tab) {
+            ['new', 'my', 'history'].forEach(t => {
+                document.getElementById('tab-'+t).style.display = (t===tab) ? 'block' : 'none';
+                document.getElementById('btn-tab-'+t).classList.toggle('active', t===tab);
+            });
+        }
+
+        function logout() { auth.signOut().then(() => window.location.href="index.html"); }
     </script>
 </body>
 </html>
