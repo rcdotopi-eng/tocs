@@ -279,27 +279,48 @@
 
         // --- SINGLE ACTIVE REQUEST LOGIC ---
         function loadMyActiveRequests() {
-            if(!riderUser || !riderUser.id) return;
+    if(!riderUser || !riderUser.id) return;
+    
+    // We keep the query, but we don't trust it blindly anymore
+    db.ref('requests').orderByChild('riderId').equalTo(riderUser.id).on('value', (snap) => {
+        let activeReq = null;
+        let activeId = null;
+
+        snap.forEach(child => {
+            const r = child.val();
             
-            db.ref('requests').orderByChild('riderId').equalTo(riderUser.id).on('value', (snap) => {
-                let activeReq = null;
-                let activeId = null;
+            // 🛑 SECURITY FIX: STRICTLY ENFORCE OWNERSHIP
+            // If the ride's owner ID does not match the logged-in user, ignore it.
+            if (r.riderId !== riderUser.id) {
+                return; 
+            }
 
-                // Find the ONE active request
-                snap.forEach(child => {
-                    const r = child.val();
-                    // Consider these active statuses
-                    if(r.status !== 'deleted' && r.status !== 'completed' && r.status !== 'CANCELLED') {
-                        activeReq = r;
-                        activeId = child.key;
-                    }
-                });
+            // Standard status checks
+            if(r.status !== 'deleted' && r.status !== 'completed' && r.status !== 'CANCELLED') {
+                activeReq = r;
+                activeId = child.key;
+            }
+        });
 
-                // Toggle UI based on active request
-                if (activeReq) {
-                    currentReqId = activeId; // Store globally
-                    document.getElementById('new-request-container').style.display = 'none';
-                    document.getElementById('active-ride-container').style.display = 'block';
+        // Toggle UI based on active request
+        if (activeReq) {
+            currentReqId = activeId; 
+            document.getElementById('new-request-container').style.display = 'none';
+            document.getElementById('active-ride-container').style.display = 'block';
+            
+            let st = activeReq.status.toUpperCase();
+            if(activeReq.status === 'pending' && activeReq.bids) st = "OFFERS RECEIVED";
+            
+            document.getElementById('card-status').innerText = st;
+            document.getElementById('card-route').innerText = `${activeReq.pickup} ➡ ${activeReq.drop}`;
+        } else {
+            currentReqId = null;
+            document.getElementById('new-request-container').style.display = 'block';
+            document.getElementById('active-ride-container').style.display = 'none';
+            closeDetails();
+        }
+    });
+}
                     
                     // Update Active Card UI
                     let st = activeReq.status.toUpperCase();
@@ -465,3 +486,4 @@
     </script>
 </body>
 </html>
+
